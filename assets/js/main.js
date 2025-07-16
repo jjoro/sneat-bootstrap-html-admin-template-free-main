@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
 
-    //event.preventDefault();
+    event.preventDefault();
 
     // 현재 그룹 내의 모든 .menu-item을 가져옵니다.
     const allItemsInGroup = event.currentTarget.querySelectorAll('.menu-item');
