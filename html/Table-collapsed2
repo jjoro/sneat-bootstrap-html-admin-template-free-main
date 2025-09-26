@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="ko" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
+    <title>Sneat - 메뉴 권한 대시보드 (Refactored)</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
+
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/boxicons@latest/css/boxicons.min.css">
+
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="https://demos.themeselection.com/sneat-bootstrap-html-admin-template-free/assets/vendor/css/core.css" class="template-customizer-core-css" />
+    <link rel="stylesheet" href="https://demos.themeselection.com/sneat-bootstrap-html-admin-template-free/assets/vendor/css/theme-default.css" class="template-customizer-theme-css" />
+    
+    <!-- Page CSS -->
+    <style>
+        .permission-list-container .list-group-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1.5rem;
+        }
+        .permission-list-container .menu-title-wrapper {
+            flex-grow: 1;
+            min-width: 0; /* flex-item이 수축할 수 있도록 설정 */
+        }
+        .permission-list-container .checkbox-wrapper {
+            display: grid;
+            grid-template-columns: repeat(4, 50px);
+            text-align: center;
+        }
+        .permission-list-header {
+            font-weight: 600;
+            background-color: #f5f5f9;
+        }
+        .collapsible-menu {
+            cursor: pointer;
+        }
+        .toggle-icon {
+            transition: transform 0.2s ease-in-out;
+            font-size: 1.25rem;
+        }
+        .collapsible-menu[aria-expanded="true"] .toggle-icon {
+            transform: rotate(-180deg);
+        }
+        .child-menu-item .menu-title-wrapper {
+            padding-left: 2.5rem !important;
+        }
+        .menu-icon {
+            font-size: 1.25rem;
+            margin-right: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Layout wrapper -->
+    <div class="layout-wrapper layout-content-navbar">
+        <div class="layout-container">
+            <!-- 임시 사이드바 -->
+            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+                 <div class="app-brand demo">
+                    <a href="#" class="app-brand-link">
+                        <span class="app-brand-text demo menu-text fw-bolder ms-2">Sneat</span>
+                    </a>
+                </div>
+                <div class="menu-inner-shadow"></div>
+                <ul class="menu-inner py-1">
+                    <li class="menu-item active">
+                        <a href="#" class="menu-link"><i class="menu-icon tf-icons bx bx-shield-quarter"></i><div>권한 설정</div></a>
+                    </li>
+                     <li class="menu-item">
+                        <a href="#" class="menu-link"><i class="menu-icon tf-icons bx bx-home-circle"></i><div>대시보드</div></a>
+                    </li>
+                </ul>
+            </aside>
+            <!-- / 임시 사이드바 -->
+
+            <!-- Layout container -->
+            <div class="layout-page">
+                 <!-- 임시 네비게이션 바 -->
+                <nav class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme" id="layout-navbar">
+                    <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
+                        <div class="navbar-nav align-items-center">
+                            <div class="nav-item d-flex align-items-center">
+                                <i class="bx bx-search fs-4 lh-0"></i>
+                                <input type="text" class="form-control border-0 shadow-none" placeholder="Search..." aria-label="Search...">
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+                <!-- / 임시 네비게이션 바 -->
+
+                <!-- Content wrapper -->
+                <div class="content-wrapper">
+                    <!-- Content -->
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">설정 /</span> 메뉴 권한 관리</h4>
+
+                        <!-- 권한 설정 카드 -->
+                        <div class="card">
+                            <h5 class="card-header">사용자 검색</h5>
+                            <div class="card-body">
+                                <div class="input-group mb-4">
+                                    <input type="text" class="form-control" placeholder="사용자 이름 또는 이메일 입력" aria-label="Username">
+                                    <button class="btn btn-primary" type="button">검색</button>
+                                </div>
+
+                                <h5 class="mb-3">메뉴 권한 설정</h5>
+                                <div class="permission-list-container">
+                                    <!-- List Header -->
+                                    <div class="list-group-item permission-list-header">
+                                        <div class="menu-title-wrapper ps-2">메뉴</div>
+                                        <div class="checkbox-wrapper">
+                                            <span>보기</span>
+                                            <span>수정</span>
+                                            <span>삭제</span>
+                                            <span>생성</span>
+                                        </div>
+                                    </div>
+                                    <!-- Menu List will be rendered here -->
+                                    <ul id="menu-permission-list" class="list-group list-group-flush"></ul>
+                                </div>
+
+                                <div class="d-flex justify-content-end mt-4">
+                                    <button type="button" class="btn btn-outline-secondary me-2">취소</button>
+                                    <button type="button" class="btn btn-primary">변경사항 저장</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!--/ 권한 설정 카드 -->
+                    </div>
+                    <!-- / Content -->
+
+                    <div class="content-backdrop fade"></div>
+                </div>
+                <!-- Content wrapper -->
+            </div>
+            <!-- / Layout page -->
+        </div>
+    </div>
+    <!-- / Layout wrapper -->
+
+    <!-- Core JS -->
+    <script src="https://demos.themeselection.com/sneat-bootstrap-html-admin-template-free/assets/vendor/libs/jquery/jquery.js"></script>
+    <script src="https://demos.themeselection.com/sneat-bootstrap-html-admin-template-free/assets/vendor/libs/popper/popper.js"></script>
+    <script src="https://demos.themeselection.com/sneat-bootstrap-html-admin-template-free/assets/vendor/js/bootstrap.js"></script>
+
+    <!-- Page JS -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // 1. 메뉴 데이터 구조 정의
+            const menuData = [
+                { id: 'dashboard', icon: 'bx-home-alt', title: '대시보드' },
+                {
+                    id: 'stats',
+                    icon: 'bx-bar-chart-alt-2',
+                    title: '통계 관리',
+                    children: [
+                        { id: 'daily-stats', title: '일별 통계' },
+                        { id: 'monthly-stats', title: '월별 통계' },
+                    ]
+                },
+                {
+                    id: 'users',
+                    icon: 'bx-group',
+                    title: '사용자 관리',
+                    children: [
+                        { id: 'permissions', title: '권한 관리' },
+                        { id: 'roles', title: '역할 관리' },
+                    ]
+                },
+                {
+                    id: 'settings',
+                    icon: 'bx-cog',
+                    title: '설정',
+                    children: [
+                        { id: 'notifications', title: '알림 설정' },
+                        { id: 'security', title: '보안 설정' },
+                    ]
+                }
+            ];
+
+            /**
+             * 2. 메뉴 생성 함수
+             * @param {Array} items - 메뉴 데이터 배열
+             * @returns {string} - 생성된 HTML 문자열
+             */
+            function createMenuHTML(items) {
+                let html = '';
+                
+                // 권한 체크박스 HTML을 생성하는 헬퍼 함수
+                const createCheckboxHTML = () => `
+                    <div class="checkbox-wrapper">
+                        <div><input class="form-check-input" type="checkbox" /></div>
+                        <div><input class="form-check-input" type="checkbox" /></div>
+                        <div><input class="form-check-input" type="checkbox" /></div>
+                        <div><input class="form-check-input" type="checkbox" /></div>
+                    </div>
+                `;
+
+                items.forEach(item => {
+                    const hasChildren = item.children && item.children.length > 0;
+                    const collapseId = `menu-collapse-${item.id}`;
+
+                    // 부모 메뉴 아이템 HTML
+                    html += `
+                        <li class="list-group-item ${hasChildren ? 'collapsible-menu' : ''}" 
+                            ${hasChildren ? `data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false"` : ''}>
+                            <div class="menu-title-wrapper">
+                                ${hasChildren ? "<i class='bx bx-chevron-down toggle-icon'></i>" : ''}
+                                <i class='bx ${item.icon} menu-icon'></i>
+                                ${hasChildren ? `<strong>${item.title}</strong>` : item.title}
+                            </div>
+                            ${createCheckboxHTML()}
+                        </li>
+                    `;
+
+                    // 자식 메뉴 아이템 HTML (재귀 호출 대신 반복문으로 처리)
+                    if (hasChildren) {
+                        html += `<ul id="${collapseId}" class="list-group list-group-flush collapse">`;
+                        item.children.forEach(child => {
+                            html += `
+                                <li class="list-group-item child-menu-item">
+                                    <div class="menu-title-wrapper">${child.title}</div>
+                                    ${createCheckboxHTML()}
+                                </li>
+                            `;
+                        });
+                        html += `</ul>`;
+                    }
+                });
+                return html;
+            }
+
+            // 3. 메뉴 렌더링
+            const menuContainer = document.getElementById('menu-permission-list');
+            if (menuContainer) {
+                menuContainer.innerHTML = createMenuHTML(menuData);
+            }
+        });
+    </script>
+</body>
+</html>
+
+
