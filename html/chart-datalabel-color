@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ApexCharts 동적 데이터 레이블 색상</title>
+    <!-- Tailwind CSS (스타일링 목적) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <!-- ApexCharts 라이브러리 -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+        /* 기본 차트 컨테이너 스타일 */
+        #chart {
+            max-width: 800px;
+            margin: 3rem auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-start justify-center font-sans">
+    
+    <div id="app" class="w-full">
+        <header class="text-center py-8">
+            <h1 class="text-3xl font-bold text-gray-800">월별 순이익 (동적 레이블)</h1>
+            <p class="text-gray-500 mt-2">양수는 빨간색, 음수는 파란색으로 표시됩니다.</p>
+        </header>
+        
+        <!-- 차트가 렌더링될 컨테이너 -->
+        <div id="chart"></div>
+    </div>
+
+    <script>
+        // 전역 변수로 앱 ID 정의 (캔버스 환경에서 필요)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // 1. 차트에 사용할 데이터 정의 (양수/음수 포함)
+        const seriesData = [44, -55, 67, -83, 43, 28, 70, -35, 52, 60, -22, 10];
+        const categories = [
+            '1월', '2월', '3월', '4월', '5월', '6월', 
+            '7월', '8월', '9월', '10월', '11월', '12월'
+        ];
+        
+        // 동적 색상 정의
+        const positiveColor = '#DC2626'; // 빨간색 (Red-600)
+        const negativeColor = '#2563EB'; // 파란색 (Blue-600)
+
+        // 2. ApexCharts 설정 정의
+        const options = {
+            series: [{
+                name: "순이익 (단위: 천 원)",
+                data: seriesData
+            }],
+            chart: {
+                type: 'bar',
+                height: 350,
+                toolbar: {
+                    show: false
+                },
+                events: {
+                    // ⭐ 차트 렌더링 후 SVG를 직접 조작하여 색상 변경
+                    dataPointSelection: function(event, chartContext, config) {},
+                    mounted: function(chartContext, config) {
+                        updateDataLabelColors();
+                    },
+                    updated: function(chartContext, config) {
+                        updateDataLabelColors();
+                    }
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '55%',
+                    endingShape: 'rounded',
+                    dataLabels: {
+                        position: 'top'
+                    }
+                },
+            },
+            dataLabels: {
+                enabled: true,
+                style: {
+                    fontSize: '14px',
+                    fontWeight: '800',
+                    colors: ['#000000'] // 기본 색상 (나중에 변경됨)
+                },
+                formatter: function (val, opts) {
+                    return val;
+                },
+                offsetY: -20,
+            },
+            stroke: {
+                show: true,
+                width: 2,
+                colors: ['transparent']
+            },
+            xaxis: {
+                categories: categories,
+            },
+            yaxis: {
+                title: {
+                    text: '금액 (천 원)'
+                }
+            },
+            fill: {
+                opacity: 1
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return val + " 천 원"
+                    }
+                }
+            },
+            // 막대 그래프 자체의 색상도 양수/음수에 따라 다르게 설정
+            colors: seriesData.map(val => val > 0 ? '#FCA5A5' : '#93C5FD')
+        };
+
+        // 3. 차트 렌더링
+        const chart = new ApexCharts(document.querySelector("#chart"), options);
+        chart.render();
+
+        // ⭐ SVG를 직접 조작하여 데이터 레이블 색상 변경
+        function updateDataLabelColors() {
+            // ApexCharts에서 시리즈 데이터 조회
+            const chartSeriesData = chart.w.config.series[0].data;
+            
+            const dataLabels = document.querySelectorAll('.apexcharts-datalabel');
+            dataLabels.forEach((label, index) => {
+                if (index < chartSeriesData.length) {
+                    const value = chartSeriesData[index];
+                    const color = value > 0 ? positiveColor : negativeColor;
+                    label.setAttribute('fill', color);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
