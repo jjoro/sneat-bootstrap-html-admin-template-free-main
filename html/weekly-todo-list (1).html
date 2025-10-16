@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly To Do List</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* ===== 최소한의 커스텀 스타일 ===== */
+        body {
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            letter-spacing: 3px;
+            font-weight: 300;
+        }
+
+        .task-title {
+            font-weight: 500;
+        }
+
+        .task-title:focus {
+            outline: none;
+        }
+
+        .collapse-icon {
+            font-size: 0.8rem;
+            transition: transform 0.3s ease;
+        }
+
+        .collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .task-details li.completed input[type="text"] {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .note-area {
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid px-3 py-5">
+        <div class="container bg-white rounded shadow-sm p-5">
+            <!-- ========================================
+                 헤더 영역
+            ======================================== -->
+            <header>
+                <h1 class="text-center mb-5">WEEKLY TO DO LIST</h1>
+            </header>
+
+            <!-- ========================================
+                 바디 영역 - 상단 그리드 (월~목)
+            ======================================== -->
+            <main>
+                <div class="row g-4 mb-4" id="topGrid"></div>
+
+                <!-- ========================================
+                     바디 영역 - 하단 그리드 (금~일 + NOTE)
+                ======================================== -->
+                <div class="row g-4 pt-4 border-top" id="bottomGrid"></div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // ========================================
+        // Configuration
+        // ========================================
+        const CONFIG = {
+            weekDays: {
+                top: ['Monday', 'Tuesday', 'Wednesday', 'Thursday'],
+                bottom: ['Friday', 'Saturday', 'Sunday']
+            },
+            tasksPerDay: 7,
+            subTasksPerTask: 3,
+            maxNestingLevel: 5
+        };
+
+        // ========================================
+        // Utility Functions
+        // ========================================
+        const Utils = {
+            generateId: (() => {
+                let counter = 0;
+                return (prefix = 'item') => `${prefix}-${Date.now()}-${counter++}`;
+            })(),
+
+            createElement: (tag, { className = '', textContent = '', attributes = {} } = {}) => {
+                const element = document.createElement(tag);
+                if (className) element.className = className;
+                if (textContent) element.textContent = textContent;
+                Object.entries(attributes).forEach(([key, value]) => {
+                    element.setAttribute(key, value);
+                });
+                return element;
+            },
+
+            getNestingLevel: (element) => {
+                let level = 0;
+                let current = element;
+                while (current && !current.classList.contains('task-item')) {
+                    if (current.classList.contains('subtask-list')) {
+                        level++;
+                    }
+                    current = current.parentElement;
+                }
+                return level;
+            }
+        };
+
+        // ========================================
+        // Task Component Class
+        // ========================================
+        class TaskComponent {
+            constructor(options = {}) {
+                this.id = Utils.generateId('task');
+                this.title = options.title || '';
+                this.level = options.level || 0;
+                this.index = options.index || 0;
+            }
+
+            createSubTaskItem(index, level) {
+                const subTaskId = Utils.generateId('subtask');
+                
+                const subTask = Utils.createElement('li', {
+                    className: 'subtask-item mb-2',
+                    attributes: { 'data-id': subTaskId, 'data-level': level }
+                });
+
+                const subTaskContent = Utils.createElement('div', {
+                    className: 'd-flex align-items-start p-2 bg-white rounded border'
+                });
+
+                const checkbox = Utils.createElement('input', {
+                    className: 'form-check-input me-2 mt-1 flex-shrink-0',
+                    attributes: { type: 'checkbox', 'data-type': 'subtask-checkbox' }
+                });
+
+                const inputWrapper = Utils.createElement('div', {
+                    className: 'flex-grow-1'
+                });
+
+                const input = Utils.createElement('input', {
+                    className: 'form-control form-control-sm border-0 bg-transparent p-1',
+                    attributes: {
+                        type: 'text',
+                        placeholder: `Sub-task ${index + 1}`,
+                        'data-type': 'subtask-input'
+                    }
+                });
+
+                const actionButtons = Utils.createElement('div', {
+                    className: 'btn-group btn-group-sm ms-2 flex-shrink-0'
+                });
+
+                if (level < CONFIG.maxNestingLevel) {
+                    const addBtn = Utils.createElement('button', {
+                        className: 'btn btn-outline-secondary btn-sm py-0 px-2',
+                        textContent: '+',
+                        attributes: {
+                            type: 'button',
+                            'data-action': 'add-nested',
+                            title: 'Add nested sub-task'
+                        }
+                    });
+                    actionButtons.appendChild(addBtn);
+                }
+
+                const deleteBtn = Utils.createElement('button', {
+                    className: 'btn btn-outline-danger btn-sm py-0 px-2',
+                    textContent: '×',
+                    attributes: {
+                        type: 'button',
+                        'data-action': 'delete',
+                        title: 'Delete sub-task'
+                    }
+                });
+                actionButtons.appendChild(deleteBtn);
+
+                inputWrapper.appendChild(input);
+                subTaskContent.appendChild(checkbox);
+                subTaskContent.appendChild(inputWrapper);
+                subTaskContent.appendChild(actionButtons);
+                subTask.appendChild(subTaskContent);
+
+                return subTask;
+            }
+
+            createSubTaskList(parentId, level) {
+                const listId = Utils.generateId('subtask-list');
+                const list = Utils.createElement('ul', {
+                    className: 'subtask-list list-unstyled mt-2 ps-4 mb-0 collapse show',
+                    attributes: { id: listId, 'data-level': level }
+                });
+
+                for (let i = 0; i < CONFIG.subTasksPerTask; i++) {
+                    list.appendChild(this.createSubTaskItem(i, level));
+                }
+
+                return list;
+            }
+
+            render(dayName, taskIndex) {
+                const taskItem = Utils.createElement('div', {
+                    className: 'task-item mb-3 border rounded p-2 bg-light',
+                    attributes: { 'data-id': this.id }
+                });
+
+                const taskHeader = Utils.createElement('div', {
+                    className: 'd-flex align-items-center user-select-none',
+                    attributes: { 'data-type': 'task-header', style: 'cursor: pointer' }
+                });
+
+                const mainCheckbox = Utils.createElement('input', {
+                    className: 'form-check-input me-2 flex-shrink-0',
+                    attributes: { type: 'checkbox', 'data-type': 'main-checkbox' }
+                });
+
+                const taskTitle = Utils.createElement('span', {
+                    className: 'task-title flex-grow-1 small',
+                    textContent: `Task ${taskIndex + 1}`,
+                    attributes: { contenteditable: 'true', 'data-type': 'task-title' }
+                });
+
+                const collapseIcon = Utils.createElement('span', {
+                    className: 'collapse-icon text-secondary ms-2',
+                    textContent: '▼',
+                    attributes: { 'data-type': 'collapse-icon' }
+                });
+
+                taskHeader.append(mainCheckbox, taskTitle, collapseIcon);
+                taskItem.appendChild(taskHeader);
+                taskItem.appendChild(this.createSubTaskList(this.id, 1));
+
+                return taskItem;
+            }
+        }
+
+        // ========================================
+        // Event Handler Class
+        // ========================================
+        class EventHandler {
+            constructor(app) {
+                this.app = app;
+            }
+
+            handleSubTaskCheckbox(checkbox) {
+                const subtaskItem = checkbox.closest('.subtask-item');
+                if (!subtaskItem) return;
+
+                const isChecked = checkbox.checked;
+                subtaskItem.classList.toggle('completed', isChecked);
+
+                const nestedList = subtaskItem.querySelector('.subtask-list');
+                if (nestedList) {
+                    const nestedCheckboxes = nestedList.querySelectorAll('input[type="checkbox"]');
+                    nestedCheckboxes.forEach(cb => {
+                        cb.checked = isChecked;
+                        cb.closest('.subtask-item')?.classList.toggle('completed', isChecked);
+                    });
+                }
+            }
+
+            handleAddNested(button) {
+                const subtaskItem = button.closest('.subtask-item');
+                if (!subtaskItem) return;
+
+                const currentLevel = parseInt(subtaskItem.dataset.level) || 1;
+                if (currentLevel >= CONFIG.maxNestingLevel) return;
+
+                let nestedList = subtaskItem.querySelector(':scope > .subtask-list');
+                
+                if (!nestedList) {
+                    nestedList = Utils.createElement('ul', {
+                        className: 'subtask-list list-unstyled mt-2 ps-4 mb-0 collapse show',
+                        attributes: { 'data-level': currentLevel + 1 }
+                    });
+                    subtaskItem.appendChild(nestedList);
+                }
+
+                const taskComponent = new TaskComponent();
+                const newSubTask = taskComponent.createSubTaskItem(
+                    nestedList.children.length,
+                    currentLevel + 1
+                );
+                nestedList.appendChild(newSubTask);
+            }
+
+            handleDelete(button) {
+                const subtaskItem = button.closest('.subtask-item');
+                if (!subtaskItem) return;
+
+                if (confirm('이 서브-태스크를 삭제하시겠습니까?')) {
+                    subtaskItem.remove();
+                }
+            }
+
+            handleCollapseToggle(header) {
+                const checkbox = header.querySelector('[data-type="main-checkbox"]');
+                const title = header.querySelector('[data-type="task-title"]');
+                
+                if (event.target === checkbox || event.target === title) {
+                    return;
+                }
+
+                const taskItem = header.closest('.task-item');
+                const taskDetails = taskItem.querySelector('.subtask-list');
+                const collapseIcon = header.querySelector('[data-type="collapse-icon"]');
+
+                if (taskDetails) {
+                    const bsCollapse = new bootstrap.Collapse(taskDetails, { toggle: true });
+                    collapseIcon.classList.toggle('collapsed');
+                }
+            }
+
+            setupEventDelegation() {
+                document.addEventListener('click', (e) => {
+                    const target = e.target;
+
+                    if (target.dataset.action === 'add-nested') {
+                        this.handleAddNested(target);
+                    } else if (target.dataset.action === 'delete') {
+                        this.handleDelete(target);
+                    } else if (target.closest('[data-type="task-header"]')) {
+                        this.handleCollapseToggle(target.closest('[data-type="task-header"]'));
+                    }
+                });
+
+                document.addEventListener('change', (e) => {
+                    const target = e.target;
+                    
+                    if (target.dataset.type === 'subtask-checkbox') {
+                        this.handleSubTaskCheckbox(target);
+                    }
+                });
+            }
+        }
+
+        // ========================================
+        // Main Application Class
+        // ========================================
+        class WeeklyTodoApp {
+            constructor() {
+                this.eventHandler = new EventHandler(this);
+            }
+
+            createDayColumn(dayName) {
+                const column = Utils.createElement('div', {
+                    className: 'col-12 col-md-6 col-lg-3 border-end pe-3'
+                });
+
+                const title = Utils.createElement('div', {
+                    className: 'fs-6 text-secondary mb-3',
+                    textContent: dayName
+                });
+                column.appendChild(title);
+
+                for (let i = 0; i < CONFIG.tasksPerDay; i++) {
+                    const task = new TaskComponent({ index: i });
+                    column.appendChild(task.render(dayName, i));
+                }
+
+                return column;
+            }
+
+            createNoteSection() {
+                const noteSection = Utils.createElement('div', {
+                    className: 'col-12 col-lg-3'
+                });
+
+                const noteTitle = Utils.createElement('div', {
+                    className: 'fs-6 text-secondary mb-3',
+                    textContent: 'NOTE'
+                });
+
+                const noteArea = Utils.createElement('textarea', {
+                    className: 'note-area form-control',
+                    attributes: {
+                        placeholder: '메모를 입력하세요...',
+                        rows: '10'
+                    }
+                });
+
+                noteSection.append(noteTitle, noteArea);
+                return noteSection;
+            }
+
+            renderTopGrid() {
+                const topGrid = document.getElementById('topGrid');
+                CONFIG.weekDays.top.forEach(day => {
+                    topGrid.appendChild(this.createDayColumn(day));
+                });
+            }
+
+            renderBottomGrid() {
+                const bottomGrid = document.getElementById('bottomGrid');
+                
+                CONFIG.weekDays.bottom.forEach(day => {
+                    bottomGrid.appendChild(this.createDayColumn(day));
+                });
+                
+                bottomGrid.appendChild(this.createNoteSection());
+            }
+
+            init() {
+                this.renderTopGrid();
+                this.renderBottomGrid();
+                this.eventHandler.setupEventDelegation();
+            }
+        }
+
+        // ========================================
+        // Application Initialization
+        // ========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            const app = new WeeklyTodoApp();
+            app.init();
+        });
+    </script>
+</body>
+</html>
