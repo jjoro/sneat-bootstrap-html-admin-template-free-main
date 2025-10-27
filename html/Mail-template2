@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이벤트 리포트</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; margin-top: 20px; margin-bottom: 20px; border: 1px solid #cccccc;">
+        
+        <!-- === 헤더 === -->
+        <tr>
+            <td align="center" style="background-color: #004a99; padding: 30px 20px 30px 20px;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px;">월간 이벤트 리포트</h1>
+                <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px;">[2025년 10월] 시스템 활동 요약</p>
+            </td>
+        </tr>
+
+        <!-- === 소개 문구 === -->
+        <tr>
+            <td style="padding: 30px 30px 20px 30px;">
+                <p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.5;">
+                    안녕하세요, 관리자님.<br><br>
+                    지난 한 달간 발생한 주요 시스템 이벤트 내역을 요약하여 보고합니다.
+                </p>
+            </td>
+        </tr>
+
+        <!-- === 이벤트 테이블 섹션 1 === -->
+        <tr>
+            <td style="padding: 10px 30px 10px 30px;">
+                <!-- 테이블 제목 -->
+                <h2 style="font-size: 20px; color: #004a99; margin: 20px 0 15px 0; border-bottom: 2px solid #eeeeee; padding-bottom: 5px;">
+                    주요 로그인 이벤트
+                </h2>
+                
+                <!-- 데이터 테이블 -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #dddddd;">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 14px; color: #ffffff; background-color: #555555; padding: 12px; text-align: left; border-bottom: 1px solid #dddddd;">발생 시간</th>
+                            <th style="font-size: 14px; color: #ffffff; background-color: #555555; padding: 12px; text-align: left; border-bottom: 1px solid #dddddd;">사용자 ID</th>
+                            <th style="font-size: 14px; color: #ffffff; background-color: #555555; padding: 12px; text-align: left; border-bottom: 1px solid #dddddd;">결과</th>
+                            <th style="font-size: 14px; color: #ffffff; background-color: #555555; padding: 12px; text-align: left; border-bottom: 1px solid #dddddd;">IP 주소</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 데이터 행 1 -->
+                        <tr>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">2025-10-26 09:15</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">admin</td>
+                            <td style="font-size: 14px; color: #d9534f; padding: 10px 12px; border-bottom: 1px solid #eeeeee; font-weight: bold;">실패 (비밀번호 오류)</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">192.168.0.101</td>
+                        </tr>
+                        <!-- 데이터 행 2 -->
+                        <tr>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">2025-10-25 14:30</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">user01</td>
+                            <td style="font-size: 14px; color: #5cb85c; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">성공</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">203.0.113.25</td>
+                        </tr>
+                        <!-- 데이터 행 3 -->
+                        <tr>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">2025-10-24 11:05</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">system_batch</td>
+                            <td style="font-size: 14px; color: #5cb85c; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">성공</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">127.0.0.1</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+
+        <!-- === 이벤트 테이블 섹션 2 === -->
+        <tr>
+            <td style="padding: 10px 30px 10px 30px;">
+                <!-- 테이블 제목 -->
+                <h2 style="font-size: 20px; color: #004a99; margin: 20px 0 15px 0; border-bottom: 2px solid #eeeeee; padding-bottom: 5px;">
+                    파일 접근 오류
+                </h2>
+                
+                <!-- 데이터 테이블 -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #dddddd;">
+                    <thead>
+                        <tr>
+                            <th style="font-size: 14px; color: #ffffff; background-color: #555555; padding: 12px; text-align: left; border-bottom: 1px solid #dddddd;">발생 시간</th>
+                            <th style="font-size: 14px; color: #ffffff; background-color: #555555; padding: 12px; text-align: left; border-bottom: 1px solid #dddddd;">사용자 ID</th>
+                            <th style="font-size: 14px; color: #ffffff; background-color: #555555; padding: 12px; text-align: left; border-bottom: 1px solid #dddddd;">파일 경로</th>
+                            <th style="font-size: 14px; color: #ffffff; background-color: #555555; padding: 12px; text-align: left; border-bottom: 1px solid #dddddd;">오류 유형</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 데이터 행 1 -->
+                        <tr>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">2025-10-26 10:02</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">user02</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">/var/www/config.ini</td>
+                            <td style="font-size: 14px; color: #d9534f; padding: 10px 12px; border-bottom: 1px solid #eeeeee; font-weight: bold;">접근 거부 (권한 없음)</td>
+                        </tr>
+                        <!-- 데이터 행 2 -->
+                        <tr>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">2025-10-25 17:45</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">user01</td>
+                            <td style="font-size: 14px; color: #333333; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">/data/report.csv</td>
+                            <td style="font-size: 14px; color: #f0ad4e; padding: 10px 12px; border-bottom: 1px solid #eeeeee;">파일 없음</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+        </tr>
+
+        <!-- === 맺음말 === -->
+        <tr>
+            <td style="padding: 30px 30px 30px 30px;">
+                <p style="margin: 0; font-size: 16px; color: #333333; line-height: 1.5;">
+                    추가 조치가 필요한 사항은 시스템 로그를 확인해 주시기 바랍니다.
+                </p>
+            </td>
+        </tr>
+
+        <!-- === 푸터 === -->
+        <tr>
+            <td style="background-color: #333333; padding: 20px 30px 20px 30px;">
+                <p style="margin: 0; color: #cccccc; font-size: 12px; text-align: center;">
+                    &copy; 2025 [회사 이름]. All rights reserved.<br>
+                    이 메일은 발신 전용입니다.
+                </p>
+            </td>
+        </tr>
+
+    </table>
+</body>
+</html>
+
