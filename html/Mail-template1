@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>이벤트 리포트</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <tr>
+            <td style="padding: 20px 0;">
+                <table role="presentation" style="width: 600px; margin: 0 auto; background-color: #ffffff; border-collapse: collapse; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                    
+                    <!-- 헤더 -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">이벤트 리포트</h1>
+                            <p style="margin: 10px 0 0 0; color: #f0f0f0; font-size: 14px;">2025년 10월 월간 보고서</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- 인사말 -->
+                    <tr>
+                        <td style="padding: 30px 30px 20px 30px;">
+                            <p style="margin: 0 0 15px 0; color: #333333; font-size: 16px; line-height: 1.6;">
+                                안녕하세요,<br>
+                                이번 달 진행된 주요 이벤트 성과를 공유드립니다.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- 이벤트 1: 신규 회원 가입 프로모션 -->
+                    <tr>
+                        <td style="padding: 10px 30px;">
+                            <h2 style="margin: 0 0 15px 0; color: #667eea; font-size: 20px; font-weight: 600; border-bottom: 2px solid #667eea; padding-bottom: 8px;">
+                                📌 신규 회원 가입 프로모션
+                            </h2>
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0;">
+                                <thead>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #667eea; color: #333; font-size: 14px; font-weight: 600;">지표</th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #667eea; color: #333; font-size: 14px; font-weight: 600;">수치</th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #667eea; color: #333; font-size: 14px; font-weight: 600;">전월 대비</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">신규 가입자</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">1,250명</td>
+                                        <td style="padding: 12px; text-align: right; color: #22c55e; font-weight: 600; font-size: 14px;">+35%</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">전환율</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">18.5%</td>
+                                        <td style="padding: 12px; text-align: right; color: #22c55e; font-weight: 600; font-size: 14px;">+5.2%p</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">쿠폰 사용률</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">72%</td>
+                                        <td style="padding: 12px; text-align: right; color: #22c55e; font-weight: 600; font-size: 14px;">+12%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- 이벤트 2: 할인 프로모션 -->
+                    <tr>
+                        <td style="padding: 30px 30px 10px 30px;">
+                            <h2 style="margin: 0 0 15px 0; color: #764ba2; font-size: 20px; font-weight: 600; border-bottom: 2px solid #764ba2; padding-bottom: 8px;">
+                                🎉 가을 시즌 할인 프로모션
+                            </h2>
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0;">
+                                <thead>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #764ba2; color: #333; font-size: 14px; font-weight: 600;">지표</th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #764ba2; color: #333; font-size: 14px; font-weight: 600;">수치</th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #764ba2; color: #333; font-size: 14px; font-weight: 600;">목표 달성률</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">총 매출</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">₩45,800,000</td>
+                                        <td style="padding: 12px; text-align: right; color: #22c55e; font-weight: 600; font-size: 14px;">115%</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">주문 건수</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">3,420건</td>
+                                        <td style="padding: 12px; text-align: right; color: #22c55e; font-weight: 600; font-size: 14px;">108%</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">평균 구매액</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">₩13,391</td>
+                                        <td style="padding: 12px; text-align: right; color: #f59e0b; font-weight: 600; font-size: 14px;">98%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- 이벤트 3: 추천 이벤트 -->
+                    <tr>
+                        <td style="padding: 30px 30px 10px 30px;">
+                            <h2 style="margin: 0 0 15px 0; color: #06b6d4; font-size: 20px; font-weight: 600; border-bottom: 2px solid #06b6d4; padding-bottom: 8px;">
+                                💝 친구 추천 이벤트
+                            </h2>
+                            <table role="presentation" style="width: 100%; border-collapse: collapse; border: 1px solid #e0e0e0;">
+                                <thead>
+                                    <tr style="background-color: #f8f9fa;">
+                                        <th style="padding: 12px; text-align: left; border-bottom: 2px solid #06b6d4; color: #333; font-size: 14px; font-weight: 600;">지표</th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #06b6d4; color: #333; font-size: 14px; font-weight: 600;">수치</th>
+                                        <th style="padding: 12px; text-align: right; border-bottom: 2px solid #06b6d4; color: #333; font-size: 14px; font-weight: 600;">참여율</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">추천인 수</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">892명</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">22.3%</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #e0e0e0;">
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">신규 유입</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">1,567명</td>
+                                        <td style="padding: 12px; text-align: right; color: #22c55e; font-weight: 600; font-size: 14px;">+42%</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 12px; color: #555; font-size: 14px;">리워드 지급</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">₩8,920,000</td>
+                                        <td style="padding: 12px; text-align: right; color: #333; font-weight: 600; font-size: 14px;">-</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                    <!-- 종합 요약 -->
+                    <tr>
+                        <td style="padding: 30px; background-color: #f8f9fa;">
+                            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 18px; font-weight: 600;">📊 종합 요약</h3>
+                            <p style="margin: 0 0 10px 0; color: #555; font-size: 14px; line-height: 1.6;">
+                                • 전체 이벤트 ROI: <strong style="color: #22c55e;">285%</strong><br>
+                                • 총 참여 고객: <strong>5,129명</strong><br>
+                                • 고객 만족도: <strong>4.7/5.0</strong>
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- 푸터 -->
+                    <tr>
+                        <td style="padding: 30px; text-align: center; background-color: #333333;">
+                            <p style="margin: 0 0 10px 0; color: #ffffff; font-size: 14px;">
+                                문의사항이 있으시면 언제든 연락주세요.
+                            </p>
+                            <p style="margin: 0; color: #999999; font-size: 12px;">
+                                © 2025 Your Company. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                    
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
