@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>jQuery 체크박스 단일 선택 예제</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .checkbox-item:hover {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+        
+        .checkbox-item.selected {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        label {
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+            flex: 1;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .result p {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .empty-state {
+            color: #999;
+            font-style: italic;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 jQuery 단일 선택 체크박스</h1>
+        <p class="subtitle">하나의 옵션만 선택할 수 있습니다 <span class="badge">jQuery</span></p>
+        
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="option1" name="options" value="옵션 1">
+                <label for="option1">📱 모바일 개발</label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="option2" name="options" value="옵션 2">
+                <label for="option2">💻 웹 개발</label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="option3" name="options" value="옵션 3">
+                <label for="option3">🎨 UI/UX 디자인</label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="option4" name="options" value="옵션 4">
+                <label for="option4">🔐 보안 및 네트워크</label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="option5" name="options" value="옵션 5">
+                <label for="option5">🤖 인공지능 / 머신러닝</label>
+            </div>
+        </div>
+        
+        <div class="result">
+            <h3>선택된 옵션:</h3>
+            <p id="selectedOption" class="empty-state">아직 선택된 옵션이 없습니다.</p>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            // 방법 1: 체크박스 change 이벤트로 중복 선택 방지
+            $('input[name="options"]').on('change', function() {
+                if ($(this).is(':checked')) {
+                    // 현재 체크박스를 제외한 모든 체크박스 해제
+                    $('input[name="options"]').not(this).prop('checked', false);
+                    
+                    // 모든 항목에서 selected 클래스 제거
+                    $('.checkbox-item').removeClass('selected');
+                    
+                    // 현재 항목에 selected 클래스 추가
+                    $(this).closest('.checkbox-item').addClass('selected');
+                    
+                    // 선택된 값 표시
+                    $('#selectedOption')
+                        .text($(this).val())
+                        .removeClass('empty-state');
+                } else {
+                    // 체크박스 해제 시
+                    $(this).closest('.checkbox-item').removeClass('selected');
+                    $('#selectedOption')
+                        .text('아직 선택된 옵션이 없습니다.')
+                        .addClass('empty-state');
+                }
+            });
+            
+            // 체크박스 아이템 전체 클릭 이벤트
+            $('.checkbox-item').on('click', function(e) {
+                if (!$(e.target).is('input, label')) {
+                    $(this).find('input[type="checkbox"]').trigger('click');
+                }
+            });
+        });
+
+        /* 
+        // 방법 2: 더 간결한 jQuery 코드
+        $(document).ready(function() {
+            $('input[name="options"]').change(function() {
+                $('input[name="options"]').not(this).prop('checked', false);
+                $('.checkbox-item').removeClass('selected');
+                
+                if ($(this).is(':checked')) {
+                    $(this).closest('.checkbox-item').addClass('selected');
+                    $('#selectedOption').text($(this).val()).removeClass('empty-state');
+                } else {
+                    $('#selectedOption').text('아직 선택된 옵션이 없습니다.').addClass('empty-state');
+                }
+            });
+        });
+        */
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>체크박스 단일 선택 예제</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .checkbox-item:hover {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+        
+        .checkbox-item.selected {
+            border-color: #667eea;
+            background-color: #f0f4ff;
+        }
+        
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+        
+        label {
+            cursor: pointer;
+            font-size: 16px;
+            color: #333;
+            flex: 1;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        
+        .result p {
+            margin: 5px 0;
+            color: #555;
+        }
+        
+        .empty-state {
+            color: #999;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 단일 선택 체크박스</h1>
+        <p class="subtitle">하나의 옵션만 선택할 수 있습니다</p>
+        
+        <div class="checkbox-group">
+            <div class="checkbox-item">
+                <input type="checkbox" id="option1" name="options" value="옵션 1">
+                <label for="option1">📱 모바일 개발</label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="option2" name="options" value="옵션 2">
+                <label for="option2">💻 웹 개발</label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="option3" name="options" value="옵션 3">
+                <label for="option3">🎨 UI/UX 디자인</label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="option4" name="options" value="옵션 4">
+                <label for="option4">🔐 보안 및 네트워크</label>
+            </div>
+            
+            <div class="checkbox-item">
+                <input type="checkbox" id="option5" name="options" value="옵션 5">
+                <label for="option5">🤖 인공지능 / 머신러닝</label>
+            </div>
+        </div>
+        
+        <div class="result">
+            <h3>선택된 옵션:</h3>
+            <p id="selectedOption" class="empty-state">아직 선택된 옵션이 없습니다.</p>
+        </div>
+    </div>
+
+    <script>
+        // 모든 체크박스 요소를 가져옵니다
+        const checkboxes = document.querySelectorAll('input[name="options"]');
+        const selectedOption = document.getElementById('selectedOption');
+        const checkboxItems = document.querySelectorAll('.checkbox-item');
+        
+        // 각 체크박스에 이벤트 리스너를 추가합니다
+        checkboxes.forEach((checkbox, index) => {
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    // 현재 체크박스를 제외한 모든 체크박스의 선택을 해제합니다
+                    checkboxes.forEach((otherCheckbox, otherIndex) => {
+                        if (otherCheckbox !== this) {
+                            otherCheckbox.checked = false;
+                            checkboxItems[otherIndex].classList.remove('selected');
+                        }
+                    });
+                    
+                    // 선택된 항목에 스타일 추가
+                    checkboxItems[index].classList.add('selected');
+                    
+                    // 선택된 값을 표시합니다
+                    selectedOption.textContent = this.value;
+                    selectedOption.classList.remove('empty-state');
+                } else {
+                    // 체크박스 선택이 해제된 경우
+                    checkboxItems[index].classList.remove('selected');
+                    selectedOption.textContent = '아직 선택된 옵션이 없습니다.';
+                    selectedOption.classList.add('empty-state');
+                }
+            });
+            
+            // 체크박스 아이템 전체 클릭 이벤트
+            checkboxItems[index].addEventListener('click', function(e) {
+                if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'LABEL') {
+                    checkbox.click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
