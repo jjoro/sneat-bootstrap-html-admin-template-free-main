@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ApexChart Instance Inspector</title>
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8fafc; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body class="p-8 flex flex-col items-center min-h-screen text-slate-800">
+
+  <div class="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+    <!-- 왼쪽: 차트 생성 및 제어 영역 -->
+    <div class="bg-white p-6 rounded-xl shadow-lg border border-slate-200">
+      <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+        <span>📊</span> 차트 생성 (Chart Generator)
+      </h2>
+      
+      <!-- 차트 컨트롤 버튼 -->
+      <div class="grid grid-cols-4 gap-2 mb-6" id="chart-controls">
+        <button data-type="bar" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-3 rounded text-sm transition">Bar</button>
+        <button data-type="line" class="bg-purple-500 hover:bg-purple-600 text-white py-2 px-3 rounded text-sm transition">Line</button>
+        <button data-type="area" class="bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-3 rounded text-sm transition">Area</button>
+        <button data-type="donut" class="bg-orange-500 hover:bg-orange-600 text-white py-2 px-3 rounded text-sm transition">Donut</button>
+      </div>
+
+      <div class="text-xs text-gray-500 mb-2">
+        현재 할당된 ID: <span id="current-chart-id" class="font-mono font-bold text-blue-600">없음</span>
+      </div>
+      
+      <!-- 차트 렌더링 영역 -->
+      <div id="chart-container" class="min-h-[350px]"></div>
+    </div>
+
+    <!-- 오른쪽: 차트 조회 영역 (Inspector) -->
+    <div class="bg-slate-900 text-slate-200 p-6 rounded-xl shadow-lg flex flex-col">
+      <h2 class="text-xl font-bold mb-4 text-slate-100 flex items-center gap-2">
+        <span>🔍</span> 인스턴스 조회 (Inspector)
+      </h2>
+      
+      <div class="flex gap-2 mb-6">
+        <input type="text" id="input-chart-id" placeholder="조회할 Chart ID 입력 (예: my-chart-bar)" 
+          class="flex-1 bg-slate-800 border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-blue-500 text-white transition">
+        <button id="btn-inspect" 
+          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded text-sm font-medium transition">
+          조회하기
+        </button>
+      </div>
+
+      <!-- 결과 출력 영역 -->
+      <div class="flex-1 overflow-auto bg-slate-800 rounded-lg p-4 border border-slate-700 font-mono text-xs leading-relaxed space-y-4">
+        
+        <div>
+          <h3 class="text-green-400 font-bold border-b border-slate-600 pb-1 mb-2">1. Series (데이터)</h3>
+          <div id="res-series" class="text-slate-300">조회 결과가 없습니다.</div>
+        </div>
+
+        <div>
+          <h3 class="text-yellow-400 font-bold border-b border-slate-600 pb-1 mb-2">2. Categories (축 라벨)</h3>
+          <div id="res-categories" class="text-slate-300">조회 결과가 없습니다.</div>
+        </div>
+
+        <div>
+          <h3 class="text-blue-400 font-bold border-b border-slate-600 pb-1 mb-2">3. Options (설정 요약)</h3>
+          <div id="res-options" class="text-slate-300">조회 결과가 없습니다.</div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * ==========================================
+     * 1. CORE LOGIC: 차트 데이터 추출 함수
+     * ==========================================
+     * ApexCharts 인스턴스에서 안전하게 데이터를 추출하는 순수 함수형 로직
+     */
+    const ChartInspector = (() => {
+      
+      // 내부 헬퍼: 안전한 객체 접근 (Optional Chaining 대체)
+      const get = (obj, path, defaultValue = undefined) => {
+        return path.split('.').reduce((acc, part) => acc && acc[part], obj) || defaultValue;
+      };
+
+      // 핵심 함수: ID로 차트 인스턴스를 찾아 데이터 반환
+      const getChartStateById = (chartId) => {
+        // 1. ApexCharts 전역 레지스트리에서 인스턴스 검색
+        const chartInstance = ApexCharts.getChartByID(chartId);
+
+        if (!chartInstance) {
+          return { error: `ID가 '${chartId}'인 차트를 찾을 수 없습니다.` };
+        }
+
+        // 2. 내부 설정 객체(config) 접근
+        // w는 ApexCharts의 내부 wireframe 객체입니다.
+        const config = chartInstance.w.config;
+
+        // 3. Categories 추출 (차트 타입에 따라 위치가 다름)
+        // 일반 차트는 xaxis.categories, 도넛/파이는 labels에 저장됨
+        const categories = config.xaxis?.categories?.length > 0 
+          ? config.xaxis.categories 
+          : (config.labels || []);
+
+        // 4. 결과 반환
+        return {
+          id: config.chart.id,
+          series: config.series,      // 실제 데이터 시리즈
+          categories: categories,     // 정규화된 카테고리
+          options: config,            // 전체 옵션 원본
+          type: config.chart.type     // 편의를 위해 타입 추가
+        };
+      };
+
+      return { inspect: getChartStateById };
+    })();
+
+
+    /**
+     * ==========================================
+     * 2. APP LOGIC: 차트 생성 및 관리
+     * ==========================================
+     */
+    
+    // 차트 생성을 위한 더미 데이터 팩토리
+    const createChartConfig = (type) => {
+      const uniqueId = `chart-${type}-${Date.now().toString().slice(-4)}`;
+      
+      const common = {
+        chart: { 
+          id: uniqueId, // 중요: 조회할 때 사용할 ID를 명시적으로 지정
+          height: 350, 
+          type: type,
+          toolbar: { show: false }
+        }
+      };
+
+      if (type === 'donut') {
+        return {
+          ...common,
+          series: [44, 55, 41, 17, 15],
+          labels: ['Apple', 'Mango', 'Orange', 'Watermelon', 'Grape']
+        };
+      } else {
+        return {
+          ...common,
+          series: [{ name: "Sample Data", data: Array.from({length: 9}, () => Math.floor(Math.random() * 100)) }],
+          xaxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'] }
+        };
+      }
+    };
+
+    // 차트 렌더러 (클로저)
+    const renderChart = (() => {
+      let currentChart = null;
+
+      return (type) => {
+        const container = document.querySelector("#chart-container");
+        if (currentChart) currentChart.destroy();
+
+        const options = createChartConfig(type);
+        currentChart = new ApexCharts(container, options);
+        currentChart.render();
+
+        // UI 업데이트: 현재 생성된 ID 표시
+        document.getElementById('current-chart-id').textContent = options.chart.id;
+        // 입력창에 자동으로 ID 채워주기 (편의성)
+        document.getElementById('input-chart-id').value = options.chart.id;
+        
+        return options.chart.id;
+      };
+    })();
+
+
+    /**
+     * ==========================================
+     * 3. UI HANDLERS: 이벤트 바인딩
+     * ==========================================
+     */
+    document.addEventListener('DOMContentLoaded', () => {
+      
+      // 1. 차트 생성 버튼들
+      document.querySelectorAll('#chart-controls button').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const type = e.target.dataset.type;
+          renderChart(type);
+          
+          // 차트가 새로 생성되면 자동으로 조회 실행 (UX 향상)
+          setTimeout(() => document.getElementById('btn-inspect').click(), 100);
+        });
+      });
+
+      // 2. 조회(Inspect) 버튼
+      document.getElementById('btn-inspect').addEventListener('click', () => {
+        const inputId = document.getElementById('input-chart-id').value.trim();
+        
+        if (!inputId) {
+          alert('차트 ID를 입력해주세요.');
+          return;
+        }
+
+        // 핵심 기능 호출
+        const result = ChartInspector.inspect(inputId);
+
+        // 결과 렌더링
+        const elSeries = document.getElementById('res-series');
+        const elCategories = document.getElementById('res-categories');
+        const elOptions = document.getElementById('res-options');
+
+        if (result.error) {
+          elSeries.innerHTML = `<span class="text-red-400">Error: ${result.error}</span>`;
+          elCategories.textContent = '';
+          elOptions.textContent = '';
+        } else {
+          elSeries.textContent = JSON.stringify(result.series, null, 2);
+          elCategories.textContent = JSON.stringify(result.categories, null, 2);
+          
+          // Options는 너무 기니까 핵심만 추려서 보여주거나 전체 보여주기
+          // 여기서는 주요 속성만 요약
+          const summaryOptions = {
+            chart: result.options.chart,
+            colors: result.options.colors,
+            stroke: result.options.stroke,
+            // ...필요한 만큼 추가
+          };
+          elOptions.textContent = JSON.stringify(summaryOptions, null, 2);
+        }
+      });
+
+      // 초기 실행
+      renderChart('bar');
+    });
+
+  </script>
+</body>
+</html>
+
+
