@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>코드 기반 아이템 검색기</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- jQuery UI CSS -->
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+    
+    <style>
+        body {
+            background-color: #f4f7f6;
+            padding-top: 80px;
+        }
+
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 입력창 디자인 */
+        .search-input {
+            height: 4rem;
+            border-radius: 15px;
+            border: 2px solid #0d6efd;
+            padding: 0 1.5rem;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
+        }
+
+        /* Autocomplete 항목 커스텀 스타일 */
+        .ui-autocomplete {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            padding: 8px 0;
+        }
+
+        .ui-menu-item .ui-menu-item-wrapper {
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .item-code {
+            font-size: 0.8rem;
+            background: #e9ecef;
+            padding: 2px 8px;
+            border-radius: 4px;
+            color: #495057;
+            font-weight: bold;
+        }
+
+        .item-name {
+            font-weight: 600;
+        }
+
+        /* 선택 결과 표시 */
+        .result-display {
+            margin-top: 30px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            
+            <div class="search-container text-center">
+                <h2 class="fw-bold mb-4 text-dark">아이템 마스터 검색</h2>
+                <p class="text-muted mb-4">아이템 코드(A01) 또는 이름을 입력하세요.</p>
+
+                <div class="position-relative">
+                    <input type="text" 
+                           id="itemSearch" 
+                           class="form-control search-input" 
+                           placeholder="코드나 이름을 입력하고 클릭하세요..." 
+                           autocomplete="off">
+                </div>
+
+                <!-- 상세 정보 결과 -->
+                <div id="infoCard" class="card result-display border-0 shadow-sm text-start">
+                    <div class="card-body p-4">
+                        <h6 class="text-primary fw-bold mb-3 border-bottom pb-2">선택된 아이템 정보</h6>
+                        <div class="row">
+                            <div class="col-4 text-muted">아이템 코드</div>
+                            <div class="col-8 fw-bold" id="res-code">-</div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-4 text-muted">아이템 이름</div>
+                            <div class="col-8 fw-bold" id="res-name">-</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- 라이브러리 -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        /**
+         * 1. 확장 가능한 데이터 구조 설계
+         * label: 화면에 보여질 텍스트
+         * value: 선택 시 입력창에 들어갈 텍스트
+         * code: 아이템 고유 코드
+         */
+        const itemMaster = [
+            { label: "Apple (사과)", value: "Apple", code: "A01" },
+            { label: "Banana (바나나)", value: "Banana", code: "B02" },
+            { label: "Cherry (체리)", value: "Cherry", code: "C03" },
+            { label: "Samsung Galaxy", value: "Samsung Galaxy", code: "S10" },
+            { label: "iPhone 15", value: "iPhone 15", code: "I15" },
+            { label: "MacBook Air", value: "MacBook Air", code: "M01" },
+            { label: "JavaScript Book", value: "JavaScript Book", code: "P99" }
+        ];
+
+        const $input = $("#itemSearch");
+
+        // 2. Autocomplete 로직
+        $input.autocomplete({
+            // 필터링 로직 확장 (이름뿐만 아니라 코드로도 검색 가능하게)
+            source: function(request, response) {
+                const term = request.term.toLowerCase();
+                const matches = itemMaster.filter(item => {
+                    return item.label.toLowerCase().includes(term) || 
+                           item.code.toLowerCase().includes(term);
+                });
+                response(matches);
+            },
+            minLength: 0,
+            delay: 0,
+            autoFocus: true,
+            
+            // 드롭다운에 항목이 그려지는 방식 커스텀
+            focus: function(event, ui) {
+                return false; 
+            },
+            
+            select: function(event, ui) {
+                // UI 업데이트
+                $("#infoCard").fadeIn();
+                $("#res-code").text(ui.item.code);
+                $("#res-name").text(ui.item.label);
+                
+                $input.val(ui.item.value);
+                return false;
+            }
+        }).data("ui-autocomplete")._renderItem = function(ul, item) {
+            // 목록에 표시될 HTML 구조 커스텀
+            return $("<li>")
+                .append(`
+                    <div class="ui-menu-item-wrapper">
+                        <span class="item-name">${item.label}</span>
+                        <span class="item-code">${item.code}</span>
+                    </div>
+                `)
+                .appendTo(ul);
+        };
+
+        // 3. 클릭 시 현재 입력된 값 기준으로 검색 목록 노출
+        $input.on('click', function() {
+            $(this).autocomplete("search", $(this).val());
+        });
+    });
+</script>
+
+</body>
+</html>
+
