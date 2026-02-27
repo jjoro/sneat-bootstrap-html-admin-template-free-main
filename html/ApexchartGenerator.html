@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ApexCharts 동적 차트 관리</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.2/apexcharts.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f172a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 24px;
+      gap: 24px;
+    }
+
+    /* ── 헤더 카드 ── */
+    .header-card {
+      background: #1e293b;
+      border-radius: 20px;
+      padding: 28px 32px;
+      width: 100%;
+      max-width: 960px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+    }
+    h1 { color: #f1f5f9; font-size: 1.4rem; margin-bottom: 6px; }
+    p.subtitle { color: #64748b; font-size: 0.85rem; margin-bottom: 24px; }
+
+    .badge {
+      display: inline-block;
+      background: #334155;
+      color: #7dd3fc;
+      border-radius: 8px;
+      padding: 3px 10px;
+      font-size: 0.75rem;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+    .count-badge {
+      display: inline-block;
+      background: #6366f1;
+      color: #fff;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.75rem;
+      margin-left: 6px;
+      vertical-align: middle;
+      transition: all 0.3s;
+    }
+
+    /* ── 버튼 공통 ── */
+    .btn {
+      padding: 10px 22px;
+      border: 2px solid transparent;
+      border-radius: 50px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: #334155;
+      color: #94a3b8;
+    }
+    .btn:hover { background: #475569; color: #f1f5f9; transform: translateY(-1px); }
+    .btn.active {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      border-color: #818cf8;
+      box-shadow: 0 4px 15px rgba(99,102,241,0.4);
+    }
+
+    /* 차트 추가 버튼 */
+    .btn-add-chart {
+      padding: 11px 26px;
+      border: 2px dashed #6366f1;
+      border-radius: 50px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      color: #818cf8;
+      transition: all 0.25s ease;
+    }
+    .btn-add-chart:hover {
+      background: #6366f1; color: #fff;
+      border-style: solid;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+      transform: translateY(-1px);
+    }
+
+    /* 데이터 추가 버튼 (초록) */
+    .btn-add-data {
+      padding: 7px 16px;
+      border: 2px dashed #10b981;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      color: #10b981;
+      transition: all 0.25s ease;
+    }
+    .btn-add-data:hover { background: #10b981; color: #fff; border-style: solid; }
+    .btn-add-data.open  { background: #10b981; color: #fff; border-style: solid; }
+
+    /* 삭제 버튼 */
+    .btn-remove {
+      padding: 6px 14px;
+      border: 1px solid #ef4444;
+      border-radius: 50px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #ef4444;
+      transition: all 0.2s;
+    }
+    .btn-remove:hover { background: #ef4444; color: #fff; }
+
+    /* 헤더 select */
+    .add-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid #334155;
+    }
+    .select-label { color: #64748b; font-size: 0.82rem; margin-right: 4px; }
+    select {
+      background: #334155;
+      color: #cbd5e1;
+      border: 1px solid #475569;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      outline: none;
+    }
+    select:focus { border-color: #6366f1; }
+
+    /* ── 차트 래퍼 ── */
+    #charts-wrapper {
+      width: 100%;
+      max-width: 960px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* ── 개별 차트 카드 ── */
+    .chart-card {
+      background: #1e293b;
+      border-radius: 20px;
+      padding: 24px 28px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      animation: slideIn 0.4s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .chart-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .chart-card-title { color: #f1f5f9; font-size: 1rem; font-weight: 600; }
+    .type-pill {
+      display: inline-block;
+      background: #334155;
+      color: #7dd3fc;
+      border-radius: 6px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      margin-left: 8px;
+      text-transform: uppercase;
+      vertical-align: middle;
+    }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+
+    .btn-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .btn-group .btn { padding: 7px 16px; font-size: 0.8rem; }
+
+    .chart-area { min-height: 300px; }
+
+    /* ── 데이터 추가 패널 ── */
+    .data-add-panel {
+      display: none;
+      margin-top: 18px;
+      padding: 18px 20px;
+      background: #0f172a;
+      border-radius: 14px;
+      border: 1px solid #1e3a2f;
+      animation: fadeDown 0.25s ease;
+    }
+    .data-add-panel.open { display: block; }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .panel-title {
+      color: #10b981;
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .data-inputs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      min-width: 110px;
+    }
+    .input-group label { color: #64748b; font-size: 0.75rem; }
+    .input-group input {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 7px 10px;
+      color: #f1f5f9;
+      font-size: 0.85rem;
+      outline: none;
+      width: 100%;
+      transition: border-color 0.2s;
+    }
+    .input-group input:focus { border-color: #10b981; }
+
+    .panel-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-apply {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      transition: all 0.2s;
+      box-shadow: 0 2px 10px rgba(16,185,129,0.3);
+    }
+    .btn-apply:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(16,185,129,0.4); }
+
+    .btn-random {
+      padding: 8px 18px;
+      border: 1px solid #475569;
+      border-radius: 50px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #94a3b8;
+      transition: all 0.2s;
+    }
+    .btn-random:hover { background: #334155; color: #f1f5f9; }
+
+    .btn-cancel-panel {
+      padding: 8px 16px;
+      border: 1px solid #475569;
+      border-radius: 50px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: transparent;
+      color: #64748b;
+      transition: all 0.2s;
+      margin-left: auto;
+    }
+    .btn-cancel-panel:hover { color: #ef4444; border-color: #ef4444; }
+
+    /* 데이터 이력 로그 */
+    .data-log {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #1e293b;
+      border-radius: 10px;
+      max-height: 130px;
+      overflow-y: auto;
+    }
+    .data-log-title {
+      color: #475569;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .data-log-item {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid #0f172a;
+      font-size: 0.78rem;
+    }
+    .data-log-item:last-child { border-bottom: none; }
+    .log-tag {
+      background: #0f172a;
+      color: #10b981;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .log-values { color: #64748b; }
+    .log-count {
+      margin-left: auto;
+      color: #334155;
+      font-size: 0.7rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ── 헤더 ── -->
+  <div class="header-card">
+    <h1>📊 동적 차트 관리 <span class="badge">ApexCharts</span>
+      <span class="count-badge" id="chart-count">0</span>
+    </h1>
+    <p class="subtitle">차트 추가/삭제 · 타입 전환 · <strong style="color:#10b981">데이터 실시간 추가</strong>를 지원합니다.</p>
+
+    <div class="add-options">
+      <span class="select-label">📌 차트 타입</span>
+      <select id="add-type-select">
+        <option value="bar">▌▌ Bar</option>
+        <option value="line">〰 Line</option>
+        <option value="area">▲ Area</option>
+        <option value="donut">◎ Donut</option>
+      </select>
+
+      <span class="select-label" style="margin-left:8px;">📦 데이터셋</span>
+      <select id="add-data-select">
+        <option value="sales">매출/비용/이익</option>
+        <option value="traffic">웹 트래픽</option>
+        <option value="users">신규 사용자</option>
+        <option value="random">랜덤 데이터</option>
+      </select>
+
+      <button class="btn-add-chart" onclick="addChart()">＋ 차트 추가</button>
+    </div>
+  </div>
+
+  <!-- ── 차트 카드 영역 ── -->
+  <div id="charts-wrapper"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  상수 & 데이터 프리셋
+// ══════════════════════════════════════════════════════════
+const MONTH_POOL = ['1월','2월','3월','4월','5월','6월','7월',
+                    '8월','9월','10월','11월','12월'];
+
+const DATA_PRESETS = {
+  sales: {
+    label: '매출/비용/이익',
+    categories: ['1월','2월','3월','4월','5월','6월','7월'],
+    series: [
+      { name: '매출', data: [430,540,620,490,710,580,670] },
+      { name: '비용', data: [280,370,410,320,490,380,430] },
+      { name: '이익', data: [150,170,210,170,220,200,240] },
+    ],
+    donutLabel: '총 매출',
+  },
+  traffic: {
+    label: '웹 트래픽',
+    categories: ['1월','2월','3월','4월','5월','6월','7월'],
+    series: [
+      { name: '방문자',   data: [1200,1850,2100,1700,2400,2900,3100] },
+      { name: '페이지뷰', data: [3800,5200,6100,4900,7200,8500,9000] },
+    ],
+    donutLabel: '방문자',
+  },
+  users: {
+    label: '신규 사용자',
+    categories: ['1월','2월','3월','4월','5월','6월','7월'],
+    series: [
+      { name: '가입', data: [85,102,134, 98,156,178,210] },
+      { name: '이탈', data: [30, 45, 50, 38, 60, 72, 85] },
+      { name: '유지', data: [55, 57, 84, 60, 96,106,125] },
+    ],
+    donutLabel: '신규 가입',
+  },
+  random: {
+    label: '랜덤 데이터',
+    categories: ['1월','2월','3월','4월','5월','6월','7월'],
+    get series() {
+      return [
+        { name: 'Series A', data: Array.from({length:7},()=>Math.floor(Math.random()*600+100)) },
+        { name: 'Series B', data: Array.from({length:7},()=>Math.floor(Math.random()*400+50))  },
+      ];
+    },
+    donutLabel: '랜덤',
+  },
+};
+
+const COLOR_PALETTES = [
+  ['#4f35d2','#d97706','#047857','#be123c','#0369a1','#7c3aed','#c2410c'],
+  ['#0891b2','#dc2626','#16a34a','#9333ea','#ea580c','#0d9488','#1d4ed8'],
+  ['#b45309','#be185d','#15803d','#1e40af','#7e22ce','#b91c1c','#0f766e'],
+  ['#065f46','#831843','#1e3a8a','#78350f','#4c1d95','#134e4a','#450a0a'],
+];
+
+const TYPE_LABELS = { bar:'▌▌ Bar', line:'〰 Line', area:'▲ Area', donut:'◎ Donut' };
+
+// ══════════════════════════════════════════════════════════
+//  레지스트리
+//  { id, instance, type, dataKey, paletteIdx,
+//    liveCategories: string[],
+//    liveSeries: Array<{name, data: number[]}>,  ← 항상 멀티 시리즈 형태로 보관
+//    addCount: number }
+// ══════════════════════════════════════════════════════════
+const chartRegistry = [];
+let chartSeq = 0;
+
+// ══════════════════════════════════════════════════════════
+//  프리셋 → 독립 복사본 생성 (deep clone)
+// ══════════════════════════════════════════════════════════
+function clonePreset(dataKey) {
+  const preset     = DATA_PRESETS[dataKey];
+  const rawSeries  = preset.series; // getter 1회 호출로 고정
+  return {
+    liveCategories : [...preset.categories],
+    liveSeries     : rawSeries.map(s => ({ name: s.name, data: [...s.data] })),
+  };
+}
+
+// ══════════════════════════════════════════════════════════
+//  ApexCharts 옵션 빌더
+// ══════════════════════════════════════════════════════════
+function buildOptions(type, paletteIdx, liveCategories, liveSeries, preset) {
+  const colors = COLOR_PALETTES[paletteIdx % COLOR_PALETTES.length];
+
+  // donut 용 flat number[]
+  const donutNumbers = liveSeries.map(s => s.data.reduce((a,b)=>a+b,0));
+  // bar/line/area 용 멀티 시리즈
+  const multiSeries = liveSeries;
+
+  const base = {
+    chart: {
+      background: 'transparent',
+      toolbar: { show: true },
+      animations: { enabled: true, easing: 'easeinout', speed: 450 },
+      height: 300,
+    },
+    theme:   { mode: 'dark' },
+    colors,
+    grid:    { borderColor: '#334155', strokeDashArray: 4 },
+    tooltip: { theme: 'dark' },
+    legend:  { labels: { colors: '#94a3b8' } },
+    xaxis:   { categories: liveCategories, labels: { style: { colors: '#64748b' } } },
+    yaxis:   { labels: { style: { colors: '#64748b' } } },
+  };
+
+  const overrides = {
+    bar: {
+      chart: { ...base.chart, type: 'bar' },
+      series: multiSeries,
+      plotOptions: { bar: { borderRadius: 6, columnWidth: '55%' } },
+      dataLabels: { enabled: false },
+      stroke: { show: false },
+      fill: { opacity: 1 },
+    },
+    line: {
+      chart: { ...base.chart, type: 'line' },
+      series: multiSeries,
+      stroke: { curve: 'smooth', width: 3 },
+      markers: { size: 5 },
+      dataLabels: { enabled: false },
+      fill: { opacity: 1 },
+      plotOptions: {},
+    },
+    area: {
+      chart: { ...base.chart, type: 'area' },
+      series: multiSeries,
+      stroke: { curve: 'smooth', width: 2 },
+      markers: { size: 0 },
+      dataLabels: { enabled: false },
+      fill: {
+        type: 'gradient',
+        gradient: { shadeIntensity:1, opacityFrom:0.55, opacityTo:0.05, stops:[0,90,100] },
+      },
+      plotOptions: {},
+    },
+    donut: {
+      chart: { ...base.chart, type: 'donut' },
+      series: donutNumbers,
+      labels: liveCategories,
+      xaxis: { categories: [] },
+      yaxis: { show: false },
+      stroke: { show: false },
+      fill: { opacity: 1 },
+      plotOptions: {
+        pie: {
+          donut: {
+            size: '65%',
+            labels: {
+              show: true,
+              total: {
+                show: true,
+                label: preset.donutLabel,
+                color: '#94a3b8',
+                formatter: w =>
+                  w.globals.seriesTotals.reduce((a,b)=>a+b,0).toLocaleString() + '만',
+              }
+            }
+          }
+        }
+      },
+      dataLabels: { enabled: true, formatter: val => val.toFixed(1)+'%' },
+      legend: { position: 'bottom', labels: { colors: '#94a3b8' } },
+    },
+  };
+
+  return { ...base, ...overrides[type] };
+}
+
+// ══════════════════════════════════════════════════════════
+//  차트 재그리기 (destroy → render) - 현재 live 데이터 기준
+// ══════════════════════════════════════════════════════════
+function redrawChart(entry) {
+  const preset = DATA_PRESETS[entry.dataKey];
+  const opts   = buildOptions(
+    entry.type, entry.paletteIdx,
+    entry.liveCategories, entry.liveSeries, preset
+  );
+  entry.instance.destroy();
+  entry.instance = new ApexCharts(
+    document.getElementById(`chart-area-${entry.id}`), opts
+  );
+  entry.instance.render();
+}
+
+// ══════════════════════════════════════════════════════════
+//  카드 DOM 생성
+// ══════════════════════════════════════════════════════════
+function createCardDOM(id, type, dataKey) {
+  const preset = DATA_PRESETS[dataKey];
+  const card   = document.createElement('div');
+  card.className = 'chart-card';
+  card.id        = `card-${id}`;
+
+  card.innerHTML = `
+    <div class="chart-card-header">
+      <div class="chart-card-title">
+        차트 #${id}
+        <span class="type-pill" id="type-pill-${id}">${TYPE_LABELS[type]}</span>
+        <span class="badge">${preset.label}</span>
+      </div>
+      <div class="header-actions">
+        <button class="btn-add-data" id="databtn-${id}"
+          onclick="toggleDataPanel(${id})">＋ 데이터 추가</button>
+        <button class="btn-remove" onclick="removeChart(${id})">✕ 삭제</button>
+      </div>
+    </div>
+
+    <!-- 타입 전환 버튼 -->
+    <div class="btn-group" id="btngroup-${id}">
+      ${['bar','line','area','donut'].map(t => `
+        <button class="btn ${t===type?'active':''}" id="typebtn-${id}-${t}"
+          onclick="switchType(${id},'${t}')">
+          ${TYPE_LABELS[t]}
+        </button>`).join('')}
+    </div>
+
+    <!-- 차트 영역 -->
+    <div class="chart-area" id="chart-area-${id}"></div>
+
+    <!-- 데이터 추가 패널 -->
+    <div class="data-add-panel" id="data-panel-${id}">
+      <div class="panel-title">📥 새 데이터 포인트 추가</div>
+
+      <div class="data-inputs" id="data-inputs-${id}">
+        <!-- renderInputForm()으로 생성 -->
+      </div>
+
+      <div class="panel-actions">
+        <button class="btn-apply"        onclick="applyData(${id})">✔ 적용</button>
+        <button class="btn-random"       onclick="fillRandom(${id})">🎲 랜덤 채우기</button>
+        <button class="btn-cancel-panel" onclick="toggleDataPanel(${id})">✕ 닫기</button>
+      </div>
+
+      <!-- 추가 이력 -->
+      <div class="data-log" id="data-log-${id}" style="display:none;">
+        <div class="data-log-title">추가 이력</div>
+      </div>
+    </div>
+  `;
+  return card;
+}
+
+// ══════════════════════════════════════════════════════════
+//  입력 폼 렌더링
+// ══════════════════════════════════════════════════════════
+function renderInputForm(id) {
+  const entry     = chartRegistry.find(e => e.id === id);
+  const container = document.getElementById(`data-inputs-${id}`);
+  const nextIdx   = entry.liveCategories.length % MONTH_POOL.length;
+  const nextLabel = MONTH_POOL[nextIdx];
+
+  let html = `
+    <div class="input-group">
+      <label>📅 월 레이블</label>
+      <input id="inp-label-${id}" type="text"
+        placeholder="${nextLabel}" value="${nextLabel}">
+    </div>`;
+
+  entry.liveSeries.forEach((s, i) => {
+    const avg = Math.round(s.data.reduce((a,b)=>a+b,0) / s.data.length);
+    html += `
+      <div class="input-group">
+        <label>📌 ${s.name}</label>
+        <input id="inp-s${i}-${id}" type="number" min="0"
+          placeholder="${avg}" value="${avg}">
+      </div>`;
+  });
+
+  container.innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════════════
+//  패널 토글
+// ══════════════════════════════════════════════════════════
+function toggleDataPanel(id) {
+  const panel = document.getElementById(`data-panel-${id}`);
+  const btn   = document.getElementById(`databtn-${id}`);
+  const open  = panel.classList.toggle('open');
+  btn.classList.toggle('open', open);
+  if (open) renderInputForm(id);
+}
+
+// ══════════════════════════════════════════════════════════
+//  랜덤 채우기
+// ══════════════════════════════════════════════════════════
+function fillRandom(id) {
+  const entry = chartRegistry.find(e => e.id === id);
+  entry.liveSeries.forEach((s, i) => {
+    const avg  = Math.round(s.data.reduce((a,b)=>a+b,0) / s.data.length);
+    const rand = Math.floor(avg * (0.5 + Math.random() * 1.0));
+    const inp  = document.getElementById(`inp-s${i}-${id}`);
+    if (inp) inp.value = rand;
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+//  데이터 적용 → 차트 재그리기
+// ══════════════════════════════════════════════════════════
+function applyData(id) {
+  const entry   = chartRegistry.find(e => e.id === id);
+  if (!entry) return;
+
+  const labelEl = document.getElementById(`inp-label-${id}`);
+  const label   = labelEl?.value.trim() || `+${entry.addCount + 1}`;
+
+  // 1. liveCategories 에 새 레이블 추가
+  entry.liveCategories.push(label);
+
+  // 2. 각 시리즈에 값 추가
+  const logValues = [];
+  entry.liveSeries.forEach((s, i) => {
+    const inp = document.getElementById(`inp-s${i}-${id}`);
+    const val = inp ? (parseFloat(inp.value) || 0) : 0;
+    s.data.push(val);
+    logValues.push({ name: s.name, val });
+  });
+
+  entry.addCount++;
+
+  // 3. 차트 재그리기
+  redrawChart(entry);
+
+  // 4. 이력 로그 추가
+  appendLog(id, label, logValues, entry.addCount);
+
+  // 5. 폼 갱신 (다음 월 자동 세팅)
+  renderInputForm(id);
+}
+
+// ══════════════════════════════════════════════════════════
+//  이력 로그 추가
+// ══════════════════════════════════════════════════════════
+function appendLog(id, label, values, count) {
+  const logEl = document.getElementById(`data-log-${id}`);
+  logEl.style.display = 'block';
+
+  const valStr = values.map(v => `${v.name}: <b style="color:#94a3b8">${v.val.toLocaleString()}</b>`).join(' · ');
+  const item   = document.createElement('div');
+  item.className = 'data-log-item';
+  item.innerHTML = `
+    <span class="log-tag">${label}</span>
+    <span class="log-values">${valStr}</span>
+    <span class="log-count">#${count}</span>`;
+  // 최신 항목을 title 바로 아래에 삽입
+  logEl.insertBefore(item, logEl.children[1] || null);
+}
+
+// ══════════════════════════════════════════════════════════
+//  차트 추가
+// ══════════════════════════════════════════════════════════
+function addChart() {
+  const type       = document.getElementById('add-type-select').value;
+  const dataKey    = document.getElementById('add-data-select').value;
+  const paletteIdx = chartRegistry.length;
+  const id         = ++chartSeq;
+
+  // 독립 복사본
+  const { liveCategories, liveSeries } = clonePreset(dataKey);
+
+  // DOM 카드
+  const card = createCardDOM(id, type, dataKey);
+  document.getElementById('charts-wrapper').appendChild(card);
+
+  // 차트 인스턴스
+  const preset   = DATA_PRESETS[dataKey];
+  const opts     = buildOptions(type, paletteIdx, liveCategories, liveSeries, preset);
+  const instance = new ApexCharts(document.getElementById(`chart-area-${id}`), opts);
+  instance.render();
+
+  // 레지스트리 등록
+  chartRegistry.push({
+    id, instance, type, dataKey, paletteIdx,
+    liveCategories, liveSeries, addCount: 0,
+  });
+
+  updateCount();
+  card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ══════════════════════════════════════════════════════════
+//  타입 전환
+// ══════════════════════════════════════════════════════════
+function switchType(id, newType) {
+  const entry = chartRegistry.find(e => e.id === id);
+  if (!entry || entry.type === newType) return;
+  entry.type = newType;
+
+  redrawChart(entry);
+
+  ['bar','line','area','donut'].forEach(t => {
+    document.getElementById(`typebtn-${id}-${t}`)
+      ?.classList.toggle('active', t === newType);
+  });
+  const pill = document.getElementById(`type-pill-${id}`);
+  if (pill) pill.textContent = TYPE_LABELS[newType];
+}
+
+// ══════════════════════════════════════════════════════════
+//  차트 삭제
+// ══════════════════════════════════════════════════════════
+function removeChart(id) {
+  const idx = chartRegistry.findIndex(e => e.id === id);
+  if (idx === -1) return;
+  chartRegistry[idx].instance.destroy();
+  chartRegistry.splice(idx, 1);
+  const card = document.getElementById(`card-${id}`);
+  if (card) {
+    card.style.transition = 'opacity 0.3s, transform 0.3s';
+    card.style.opacity    = '0';
+    card.style.transform  = 'translateY(-10px)';
+    setTimeout(() => card.remove(), 300);
+  }
+  setTimeout(updateCount, 310);
+}
+
+// ══════════════════════════════════════════════════════════
+//  카운트 배지
+// ══════════════════════════════════════════════════════════
+function updateCount() {
+  document.getElementById('chart-count').textContent = chartRegistry.length;
+}
+
+// ══════════════════════════════════════════════════════════
+//  초기 차트 1개 자동 생성
+// ══════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('add-type-select').value = 'bar';
+  document.getElementById('add-data-select').value = 'sales';
+  addChart();
+});
+</script>
+</body>
+</html>
