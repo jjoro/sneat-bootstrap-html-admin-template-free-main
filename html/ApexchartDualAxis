@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ApexCharts — Series Live Update</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.45.2/apexcharts.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0c10; --panel: #111318; --border: #1f2330;
+      --accent1: #00e5ff; --accent2: #ff5f57; --accent3: #a3ff70; --accent4: #ffd166;
+      --text: #e8eaf0; --muted: #6b7280;
+      --mono: 'Space Mono', monospace; --display: 'Syne', sans-serif;
+    }
+    *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--text); font-family:var(--display); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:40px 20px 60px; }
+    header { width:100%; max-width:960px; margin-bottom:36px; }
+    .badge { font-family:var(--mono); font-size:10px; letter-spacing:3px; text-transform:uppercase; color:var(--accent1); border:1px solid var(--accent1); display:inline-block; padding:3px 10px; margin-bottom:14px; }
+    h1 { font-size:clamp(28px,5vw,48px); font-weight:800; line-height:1.1; background:linear-gradient(135deg,var(--accent1) 0%,var(--accent3) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .subtitle { font-family:var(--mono); font-size:12px; color:var(--muted); margin-top:8px; letter-spacing:1px; }
+    .layout { display:grid; grid-template-columns:1fr 320px; gap:20px; width:100%; max-width:960px; }
+    @media(max-width:700px){ .layout{grid-template-columns:1fr;} }
+    .panel { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:24px; position:relative; overflow:hidden; }
+    .panel::before { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:linear-gradient(90deg,var(--accent1),transparent); }
+    .panel-title { font-family:var(--mono); font-size:10px; letter-spacing:2px; text-transform:uppercase; color:var(--muted); margin-bottom:18px; }
+    #mainChart { min-height:320px; }
+    .controls-panel { display:flex; flex-direction:column; gap:16px; }
+    .series-cards { display:flex; flex-direction:column; gap:10px; }
+    .series-card { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; transition:border-color .2s; }
+    .series-card:hover { border-color:var(--accent1); }
+    .series-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-right:10px; }
+    .series-label { font-size:13px; font-weight:700; flex:1; }
+    .series-val { font-family:var(--mono); font-size:11px; color:var(--muted); }
+    .btn-group { display:flex; flex-direction:column; gap:8px; }
+    .btn { font-family:var(--mono); font-size:11px; letter-spacing:1px; text-transform:uppercase; border:1px solid var(--border); background:transparent; color:var(--text); padding:10px 14px; border-radius:6px; cursor:pointer; transition:all .2s; text-align:left; display:flex; align-items:center; gap:8px; }
+    .btn:hover { border-color:var(--accent1);color:var(--accent1);background:rgba(0,229,255,0.04); }
+    .btn.active { border-color:var(--accent3);color:var(--accent3);background:rgba(163,255,112,0.06); }
+    .btn .icon { font-size:14px; }
+    .type-tabs { display:flex;gap:6px;flex-wrap:wrap; }
+    .tab { font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;border:1px solid var(--border);background:transparent;color:var(--muted);padding:6px 10px;border-radius:4px;cursor:pointer;transition:all .2s; }
+    .tab:hover,.tab.active { border-color:var(--accent4);color:var(--accent4);background:rgba(255,209,102,0.07); }
+    .log-box { background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;height:110px;overflow-y:auto;font-family:var(--mono);font-size:10px;line-height:1.8; }
+    .log-line { color:var(--muted); }
+    .log-line span { color:var(--accent1); }
+    .log-line.ok span { color:var(--accent3); }
+    .log-line.warn span { color:var(--accent2); }
+    label.slider-label { font-family:var(--mono);font-size:10px;letter-spacing:1px;color:var(--muted);display:flex;justify-content:space-between;margin-bottom:6px; }
+    input[type=range] { width:100%;accent-color:var(--accent1); }
+    .live-indicator { display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--accent3); }
+    .live-dot { width:7px;height:7px;border-radius:50%;background:var(--accent3);animation:pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.7)} }
+    .live-indicator.off { color:var(--muted); }
+    .live-indicator.off .live-dot { background:var(--muted);animation:none; }
+    footer { margin-top:32px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:1px; }
+
+    /* ── Dual Y-Axis Panel ── */
+    .panel.dual-yaxis-panel::before { background:linear-gradient(90deg,var(--accent4),transparent); }
+    .dual-toggle-btn {
+      width:100%; padding:11px; border-radius:8px; cursor:pointer;
+      font-family:var(--mono); font-size:10px; letter-spacing:1.5px; text-transform:uppercase;
+      border:1px solid var(--accent4); color:var(--accent4);
+      background:rgba(255,209,102,.05); transition:all .2s;
+      display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:16px;
+    }
+    .dual-toggle-btn:hover { background:rgba(255,209,102,.12); }
+    .dual-toggle-btn.on { background:rgba(255,209,102,.15); box-shadow:0 0 18px rgba(255,209,102,.18); }
+    .yaxis-builder { display:flex; flex-direction:column; gap:8px; }
+    .yaxis-row {
+      display:grid; grid-template-columns:10px 1fr auto auto;
+      align-items:center; gap:10px;
+      background:var(--bg); border:1px solid var(--border);
+      border-radius:8px; padding:10px 12px;
+      transition: border-color .2s, border-left-color .2s;
+    }
+    .yaxis-row.bar-type  { border-left:3px solid var(--accent2); }
+    .yaxis-row.line-type { border-left:3px solid var(--accent1); }
+    .yaxis-name { font-size:12px; font-weight:700; }
+    .axis-badge {
+      font-family:var(--mono); font-size:9px; letter-spacing:1px;
+      padding:3px 7px; border-radius:3px; font-weight:700; white-space:nowrap;
+    }
+    .badge-left  { background:rgba(255,95,87,.15);  color:var(--accent2); border:1px solid rgba(255,95,87,.4); }
+    .badge-right { background:rgba(0,229,255,.12); color:var(--accent1); border:1px solid rgba(0,229,255,.35); }
+    .type-pill-group { display:flex; gap:4px; }
+    .type-pill {
+      font-family:var(--mono); font-size:9px; letter-spacing:.5px; text-transform:uppercase;
+      padding:4px 9px; border-radius:4px; cursor:pointer;
+      border:1px solid var(--border); background:transparent; color:var(--muted);
+      transition:all .15s;
+    }
+    .type-pill:hover { color:var(--text); border-color:var(--muted); }
+    .type-pill.bar-active  { border-color:var(--accent2); color:var(--accent2); background:rgba(255,95,87,.1); }
+    .type-pill.line-active { border-color:var(--accent1); color:var(--accent1); background:rgba(0,229,255,.08); }
+    .yaxis-row.disabled-row { opacity:.35; pointer-events:none; }
+
+    /* axis diagram */
+    .axis-diagram {
+      display:flex; margin-top:14px; border:1px solid var(--border);
+      border-radius:8px; overflow:hidden; font-family:var(--mono); font-size:9px;
+    }
+    .axis-col { flex:1; padding:10px 12px; }
+    .axis-col.left-col  { background:rgba(255,95,87,.05); border-right:1px solid var(--border); }
+    .axis-col.right-col { background:rgba(0,229,255,.05); text-align:right; }
+    .axis-col-header { font-size:8px; letter-spacing:2px; text-transform:uppercase; opacity:.55; margin-bottom:6px; display:flex; align-items:center; gap:5px; }
+    .axis-col.right-col .axis-col-header { justify-content:flex-end; }
+    .axis-chip {
+      display:inline-flex; align-items:center; gap:4px;
+      padding:2px 7px; border-radius:3px; margin:2px 1px; font-size:9px;
+    }
+    .chip-bar  { background:rgba(255,95,87,.18); color:var(--accent2); }
+    .chip-line { background:rgba(0,229,255,.15); color:var(--accent1); }
+    .chip-dot  { width:5px; height:5px; border-radius:50%; }
+
+    /* code preview */
+    .code-preview {
+      margin-top:14px; background:var(--bg); border:1px solid var(--border);
+      border-radius:6px; padding:12px; font-family:var(--mono); font-size:9px;
+      color:var(--muted); line-height:1.9; overflow-x:auto;
+      max-height:130px; overflow-y:auto;
+    }
+    .code-preview .kw  { color:var(--accent4); }
+    .code-preview .str { color:var(--accent3); }
+    .code-preview .val { color:var(--accent1); }
+    .code-preview .cm  { color:#374151; }
+  </style>
+</head>
+<body>
+<header>
+  <div class="badge">ApexCharts · Live Demo</div>
+  <h1>Series Update Explorer</h1>
+  <p class="subtitle">// getChartByID · updateSeries · appendData · dualYAxis · annotations</p>
+</header>
+
+<div class="layout">
+  <!-- ── Left: Chart ── -->
+  <div style="display:flex;flex-direction:column;gap:20px;">
+    <div class="panel">
+      <div class="panel-title">// 실시간 차트 뷰</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div class="type-tabs">
+          <button class="tab active" onclick="changeType('line',this)">Line</button>
+          <button class="tab" onclick="changeType('bar',this)">Bar</button>
+          <button class="tab" onclick="changeType('area',this)">Area</button>
+          <button class="tab" onclick="changeType('scatter',this)">Scatter</button>
+        </div>
+        <div class="live-indicator off" id="liveInd">
+          <div class="live-dot"></div><span>LIVE</span>
+        </div>
+      </div>
+      <div id="mainChart"></div>
+    </div>
+
+    <!-- ── Dual Y-Axis Panel (full width below chart) ── -->
+    <div class="panel dual-yaxis-panel">
+      <div class="panel-title">// 이중 Y축 동적 생성 — yaxis[] 옵션 빌더</div>
+
+      <button class="dual-toggle-btn" id="dualToggleBtn" onclick="toggleDualMode()">
+        <span id="dualToggleIcon">⊕</span>
+        <span id="dualToggleLabel">이중 Y축 모드 활성화</span>
+      </button>
+
+      <!-- 시리즈별 타입 설정 -->
+      <div class="yaxis-builder" id="yaxisBuilder">
+        <!-- JS 주입 -->
+      </div>
+
+      <!-- 좌/우 축 다이어그램 -->
+      <div class="axis-diagram" id="axisDiagram">
+        <div class="axis-col left-col">
+          <div class="axis-col-header">◀ LEFT Y-AXIS <span style="color:var(--accent2);">BAR</span></div>
+          <div id="leftAxisChips">—</div>
+        </div>
+        <div class="axis-col right-col">
+          <div class="axis-col-header"><span style="color:var(--accent1);">LINE</span> RIGHT Y-AXIS ▶</div>
+          <div id="rightAxisChips">—</div>
+        </div>
+      </div>
+
+      <!-- 생성된 yaxis 옵션 코드 미리보기 -->
+      <div class="code-preview" id="codePreview"></div>
+    </div>
+  </div>
+
+  <!-- ── Right: Controls ── -->
+  <div class="controls-panel">
+    <div class="panel">
+      <div class="panel-title">// series 정보 (getChartByID)</div>
+      <div class="series-cards" id="seriesCards"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">// series 업데이트 메서드</div>
+      <div class="btn-group">
+        <button class="btn" onclick="doUpdateSeries()"><span class="icon">↺</span> updateSeries() — 전체 교체</button>
+        <button class="btn" onclick="doAppendData()"><span class="icon">+</span> appendData() — 데이터 추가</button>
+        <button class="btn" onclick="doToggleSeries(0)"><span class="icon">◑</span> toggleSeries('Revenue')</button>
+        <button class="btn" onclick="doToggleSeries(1)"><span class="icon">◑</span> toggleSeries('Cost')</button>
+        <button class="btn" onclick="doResetSeries()"><span class="icon">⟳</span> resetSeries() — 초기화</button>
+        <button class="btn" id="liveBtn" onclick="toggleLive()"><span class="icon">▶</span> 라이브 스트림 ON</button>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">// 데이터 포인트 수</div>
+      <label class="slider-label"><span>Points</span><span id="ptVal">10</span></label>
+      <input type="range" min="4" max="30" value="10" id="ptSlider" oninput="document.getElementById('ptVal').textContent=this.value"/>
+      <div style="margin-top:16px;">
+        <div class="panel-title">// 이벤트 로그</div>
+        <div class="log-box" id="logBox"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>ApexCharts v3 · getChartByID · updateSeries · appendData · toggleSeries · dual yaxis</footer>
+
+<script>
+/* ═══════════════════════════════════════════════
+   CONSTANTS
+═══════════════════════════════════════════════ */
+const COLORS      = ['#00e5ff','#ff5f57','#a3ff70','#ffd166'];
+const SERIES_NAMES = ['Revenue','Cost','Profit'];
+
+/* annotation 관리 */
+let annotationCount = 0;
+const MAX_ANNOTATIONS = 12;
+
+/* ── 이중 Y축 상태 ── */
+let dualMode   = false;
+// 각 시리즈의 차트 타입: 'bar' → 왼쪽 Y축, 'line' → 오른쪽 Y축
+let seriesTypes = ['bar', 'line', 'line'];   // Revenue=좌(bar), Cost/Profit=우(line)
+
+/* ═══════════════════════════════════════════════
+   DATA HELPERS
+═══════════════════════════════════════════════ */
+function makeData(n=10){
+  return Array.from({length:n},(_,i)=>({x:`Q${i+1}`,y:Math.floor(Math.random()*80)+20}));
+}
+function initialSeries(n=10){
+  return SERIES_NAMES.map(name=>({name,data:makeData(n)}));
+}
+
+/* ═══════════════════════════════════════════════
+   CHART INIT
+═══════════════════════════════════════════════ */
+let chartType = 'line';
+
+const options = {
+  chart:{
+    id:'mainChart', type:'line', height:320, background:'transparent',
+    toolbar:{show:true},
+    animations:{enabled:true,speed:400,dynamicAnimation:{enabled:true,speed:300}},
+    events:{
+      dataPointSelection(e,ctx,cfg){
+        const s=cfg.seriesIndex, p=cfg.dataPointIndex;
+        const val=ctx.w.globals.series[s][p];
+        addLog('ok',`dataPointSelection  series[${s}][${p}] = ${val}`);
+        refreshCards(ctx);
+      }
+    }
+  },
+  colors: COLORS,
+  stroke:{ curve:'smooth', width:2 },
+  fill:{ type:'solid', gradient:{shadeIntensity:.3,opacityFrom:.5,opacityTo:.05} },
+  grid:{ borderColor:'#1f2330', xaxis:{lines:{show:false}} },
+  xaxis:{
+    labels:{style:{colors:'#6b7280',fontFamily:'Space Mono',fontSize:'10px'},
+    rotate:-30,hideOverlappingLabels:true},
+    axisBorder:{color:'#1f2330'}, axisTicks:{color:'#1f2330'}
+  },
+  yaxis:{ labels:{style:{colors:'#6b7280',fontFamily:'Space Mono',fontSize:'10px'}} },
+  legend:{ labels:{colors:'#e8eaf0'}, fontFamily:'Space Mono', fontSize:'10px' },
+  tooltip:{ theme:'dark', style:{fontFamily:'Space Mono',fontSize:'11px'} },
+  dataLabels:{
+    enabled:true,
+    formatter:v=>v,
+    style:{fontSize:'9px',fontFamily:'Space Mono',colors:['#e8eaf0']},
+    background:{enabled:true,foreColor:'#0a0c10',borderRadius:3,padding:2,opacity:.7,borderWidth:0},
+    offsetY:-6
+  },
+  series: initialSeries(10),
+  annotations:{ yaxis:[], points:[] }
+};
+
+const chart = new ApexCharts(document.querySelector('#mainChart'), options);
+chart.render().then(()=>{
+  addLog('ok','chart.render() 완료 — ApexCharts.getChartByID() 준비됨');
+  refreshCards(ApexCharts.getChartByID('mainChart'));
+  renderYAxisBuilder();      // 이중 Y축 UI 초기 렌더
+  updateAxisDiagram();
+  updateCodePreview();
+});
+
+/* ═══════════════════════════════════════════════
+   SERIES CARDS
+═══════════════════════════════════════════════ */
+function refreshCards(c){
+  if(!c) return;
+  const g=c.w.globals;
+  const names=g.seriesNames, series=g.series;
+  const hidden=g.collapsedSeriesIndices||[];
+  const container=document.getElementById('seriesCards');
+  container.innerHTML='';
+  names.forEach((name,i)=>{
+    const vals=series[i]||[];
+    const avg=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1):'—';
+    let rateHtml='';
+    if(vals.length>=2){
+      const prev=vals[vals.length-2], cur=vals[vals.length-1];
+      const r=((cur-prev)/prev*100).toFixed(1);
+      const isPos=+r>=0;
+      rateHtml=`<span style="color:${isPos?'#ef4444':'#3b82f6'};font-size:10px;margin-left:6px;">${isPos?'+':''}${r}%</span>`;
+    }
+    container.innerHTML+=`<div class="series-card" style="${hidden.includes(i)?'opacity:.4':''}">
+      <div class="series-dot" style="background:${COLORS[i]||'#fff'}"></div>
+      <div class="series-label">${name}${rateHtml}</div>
+      <div class="series-val">avg ${avg} · ${vals.length}pts</div>
+    </div>`;
+  });
+}
+
+/* ═══════════════════════════════════════════════
+   APPEND DATA + ANNOTATION
+═══════════════════════════════════════════════ */
+function appendWithAnnotation(){
+  const c = ApexCharts.getChartByID('mainChart');
+  if(!c) return;
+  const g = c.w.globals;
+
+  const prevValues = g.seriesNames.map((_,i)=>{
+    const s=g.series[i]||[];
+    return s.length>0 ? s[s.length-1] : null;
+  });
+
+  const timeLabel  = new Date().toLocaleTimeString('ko-KR',{hour12:false});
+  const newYValues = g.seriesNames.map(()=>Math.floor(Math.random()*80)+20);
+  const appendPayload = g.seriesNames.map((_,i)=>({
+    data:[{ x:timeLabel, y:newYValues[i] }]
+  }));
+
+  chart.appendData(appendPayload);
+
+  const yAnnotationsNew=[], rateInfos=[];
+  g.seriesNames.forEach((name,i)=>{
+    const prev=prevValues[i], cur=newYValues[i];
+    if(prev===null) return;
+    const rate=((cur-prev)/prev*100);
+    const rateStr=(rate>=0?'+':'')+rate.toFixed(1)+'%';
+    const isPos=rate>=0;
+    const color=isPos?'#ef4444':'#3b82f6';
+    const prefix=isPos?'▲ +':'▼ ';
+    rateInfos.push(`${name}: ${rateStr}`);
+    yAnnotationsNew.push({
+      y:cur, borderColor:color, borderWidth:1.5, strokeDashArray:4,
+      label:{
+        position:'right',
+        text:`${prefix}${Math.abs(rate).toFixed(1)}% · ${name}`,
+        borderColor:color, borderWidth:1,
+        style:{color:'#fff',background:color,fontSize:'9px',fontFamily:'Space Mono',
+               padding:{top:3,bottom:3,left:6,right:6}}
+      }
+    });
+  });
+
+  annotationCount += g.seriesNames.length;
+  if(annotationCount > MAX_ANNOTATIONS){
+    chart.clearAnnotations();
+    annotationCount = g.seriesNames.length;
+    addLog('warn','annotation 초과 — clearAnnotations() 호출');
+  }
+  chart.updateOptions({ annotations:{ yaxis:yAnnotationsNew } }, false, false);
+
+  const logType = newYValues[0]>(prevValues[0]||0)?'ok':'warn';
+  addLog(logType,`appendData() [${timeLabel}] — ${rateInfos.join(' | ')}`);
+  setTimeout(()=>refreshCards(ApexCharts.getChartByID('mainChart')),100);
+}
+
+/* ═══════════════════════════════════════════════
+   STANDARD CONTROLS
+═══════════════════════════════════════════════ */
+function doUpdateSeries(){
+  const n=+document.getElementById('ptSlider').value;
+  if(dualMode){
+    applyDualYAxis(n);
+  } else {
+    chart.updateSeries(initialSeries(n),true);
+  }
+  chart.clearAnnotations(); annotationCount=0;
+  addLog('ok',`updateSeries() — ${n}개 포인트 교체 · annotation 초기화`);
+  setTimeout(()=>refreshCards(ApexCharts.getChartByID('mainChart')),100);
+}
+function doAppendData(){ appendWithAnnotation(); }
+function doToggleSeries(idx){
+  const c=ApexCharts.getChartByID('mainChart');
+  if(!c)return;
+  const name=c.w.globals.seriesNames[idx];
+  chart.toggleSeries(name);
+  addLog('warn',`toggleSeries('${name}') 호출`);
+  setTimeout(()=>refreshCards(ApexCharts.getChartByID('mainChart')),200);
+}
+function doResetSeries(){
+  chart.resetSeries(); chart.clearAnnotations(); annotationCount=0;
+  addLog('ok','resetSeries() + clearAnnotations()');
+  setTimeout(()=>refreshCards(ApexCharts.getChartByID('mainChart')),200);
+}
+function changeType(type,btn){
+  if(dualMode){ addLog('warn','이중 Y축 모드 중에는 전체 타입 변경 불가 — 개별 설정을 사용하세요'); return; }
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  chartType=type;
+  chart.updateOptions({chart:{type},fill:{type:type==='area'?'gradient':'solid'}});
+  addLog('ok',`차트 타입 변경 → ${type}`);
+}
+
+/* ── Live Stream ── */
+let liveTimer=null;
+function toggleLive(){
+  const btn=document.getElementById('liveBtn'), ind=document.getElementById('liveInd');
+  if(liveTimer){
+    clearInterval(liveTimer); liveTimer=null;
+    btn.innerHTML='<span class="icon">▶</span> 라이브 스트림 ON';
+    btn.classList.remove('active'); ind.className='live-indicator off';
+    addLog('warn','라이브 스트림 중지');
+  } else {
+    liveTimer=setInterval(()=>appendWithAnnotation(),1400);
+    btn.innerHTML='<span class="icon">■</span> 라이브 스트림 OFF';
+    btn.classList.add('active'); ind.className='live-indicator';
+    addLog('ok','라이브 스트림 시작 (1.4s) — 증감률 annotation 활성');
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   ★  공용 함수: buildDualYAxisOptions(chartId, seriesTypeMap, style?)
+   ═══════════════════════════════════════════════════════════════════
+   목적:
+     이중 Y축(혼합 차트) 구성에 필요한 모든 ApexCharts updateOptions
+     페이로드를 단일 함수에서 생성한다.
+
+   파라미터:
+     chartId      {string}  ApexCharts.getChartByID() 에 전달할 차트 ID
+     seriesTypeMap {Object}  시리즈명 → 차트 타입 매핑
+                              { 'Revenue': 'bar', 'Cost': 'line', ... }
+                              생략된 시리즈는 기본값 'line' 으로 처리
+     style        {Object}  (선택) 축 스타일 오버라이드
+                              { fontFamily, fontSize, leftColor, rightColor }
+
+   반환:
+     {
+       payload   : updateOptions 에 바로 전달 가능한 옵션 객체
+       seriesInfo: [{ name, type, color, side }] — 로그/UI 업데이트용
+     }
+     차트 인스턴스를 찾지 못하면 null 반환.
+
+   내부 동작:
+     1. chart.w.globals 에서 seriesNames / series / colors / categoryLabels 동적 조회
+     2. seriesTypeMap 기준으로 bar=왼쪽(opposite:false) / line=오른쪽(opposite:true) 분류
+     3. 각 측의 첫 번째 시리즈를 앵커로 지정 → 같은 측 후속 시리즈는
+        seriesName 을 앵커에 연결하고 show:false 로 중복 축 제거
+     4. stroke.width 배열: bar=0, line=2 (혼합 차트 필수)
+     5. 모든 시리즈 현재 데이터를 globals 에서 읽어 series 배열 재구성
+═══════════════════════════════════════════════════════════════════ */
+function buildDualYAxisOptions(chartId, seriesTypeMap, style = {}) {
+
+  /* ── 0. 차트 인스턴스 + globals 조회 ── */
+  const c = ApexCharts.getChartByID(chartId);
+  if (!c) { console.warn(`[buildDualYAxisOptions] chart "${chartId}" not found`); return null; }
+  const g = c.w.globals;
+
+  /* ── 1. globals 에서 동적으로 메타데이터 추출 ── */
+  const names    = g.seriesNames;                          // ['Revenue','Cost','Profit']
+  const rawSeries = g.series;                             // [[50,40,...],[30,20,...],...]
+  const colors   = g.colors || g.colorScale || [];         // 차트가 실제 사용 중인 색상
+  const xLabels  = (g.categoryLabels && g.categoryLabels.length)
+                   ? g.categoryLabels                      // 카테고리 축 레이블
+                   : (g.labels && g.labels.length)
+                     ? g.labels
+                     : rawSeries[0]?.map((_,j) => `Q${j+1}`) || [];
+
+  /* ── 2. 스타일 기본값 (오버라이드 가능) ── */
+  const ff       = style.fontFamily || 'Space Mono';
+  const fs       = style.fontSize   || '9px';
+
+  /* ── 3. 시리즈별 타입 결정 (seriesTypeMap 참조, 없으면 'line') ── */
+  const types = names.map(name => seriesTypeMap[name] || 'line');
+
+  /* ── 4. 좌/우 축 앵커 시리즈 결정 ── */
+  //   같은 측에서 첫 번째 시리즈만 축을 실제 렌더링하고,
+  //   나머지는 해당 앵커를 seriesName 으로 참조해 스케일을 공유한다.
+  const leftAnchor  = names.find((_, i) => types[i] === 'bar');   // 왼쪽 축 대표
+  const rightAnchor = names.find((_, i) => types[i] === 'line');  // 오른쪽 축 대표
+
+  //   각 측 색상: 앵커 시리즈의 차트 색상을 축 색상으로 사용
+  const leftAnchorIdx  = names.indexOf(leftAnchor);
+  const rightAnchorIdx = names.indexOf(rightAnchor);
+  const leftColor      = style.leftColor  || colors[leftAnchorIdx]  || '#ff5f57';
+  const rightColor     = style.rightColor || colors[rightAnchorIdx] || '#00e5ff';
+
+  /* ── 5. yaxis 배열 동적 생성 ── */
+  const shownSide = { left: false, right: false };
+
+  const yaxis = names.map((name, i) => {
+    const isBar  = types[i] === 'bar';
+    const side   = isBar ? 'left' : 'right';
+    const anchor = isBar ? leftAnchor : rightAnchor;
+    const axisColor = isBar ? leftColor : rightColor;
+
+    // 해당 측에서 첫 번째로 등장한 시리즈만 축을 표시
+    const isFirst = !shownSide[side];
+    if (isFirst) shownSide[side] = true;
+
+    return {
+      seriesName : anchor || name,  // 같은 측 시리즈를 앵커에 스케일 연결
+      opposite   : !isBar,          // bar → 왼쪽(false), line → 오른쪽(true)
+      show       : isFirst,         // 첫 번째 시리즈만 축 선·레이블 표시
+      axisTicks  : { show: isFirst, color: axisColor },
+      axisBorder : { show: isFirst, color: axisColor, width: 2 },
+      labels     : {
+        show     : isFirst,
+        style    : { colors: axisColor, fontFamily: ff, fontSize: fs },
+        formatter: v => Math.round(v)
+      },
+      title: isFirst ? {
+        text : isBar ? '◀ LEFT' : 'RIGHT ▶',
+        style: { color: axisColor, fontFamily: ff, fontSize: fs, fontWeight: 400 }
+      } : {}
+    };
+  });
+
+  /* ── 6. series 배열: globals 현재 데이터 + type 속성 부여 ── */
+  const series = names.map((name, i) => ({
+    name,
+    type : types[i],               // 'bar' | 'line' — 혼합 차트 필수
+    data : (rawSeries[i] || []).map((v, j) => ({
+      x: xLabels[j] || `Q${j+1}`,
+      y: v
+    }))
+  }));
+
+  /* ── 7. stroke.width 배열: bar=0, line=2 ── */
+  const strokeWidths = types.map(t => t === 'bar' ? 0 : 2);
+
+  /* ── 8. 최종 payload 조립 ── */
+  const payload = {
+    chart       : { type: 'line' },  // mixed 차트는 기본 type을 'line' 으로 고정
+    series,
+    yaxis,
+    stroke      : { curve: 'smooth', width: strokeWidths },
+    fill        : { type: types.map(() => 'solid') },
+    plotOptions : { bar: { columnWidth: '55%', borderRadius: 3 } },
+    dataLabels  : { enabled: false }
+  };
+
+  /* ── 9. 호출자가 활용할 수 있는 메타 정보 ── */
+  const seriesInfo = names.map((name, i) => ({
+    name,
+    type  : types[i],
+    color : colors[i] || '#fff',
+    side  : types[i] === 'bar' ? 'LEFT' : 'RIGHT'
+  }));
+
+  return { payload, seriesInfo };
+}
+
+/* ═══════════════════════════════════════════════
+   DUAL Y-AXIS 적용 / 복원 — buildDualYAxisOptions 호출
+═══════════════════════════════════════════════ */
+
+/** 현재 seriesTypes 맵을 읽어 공용 함수를 호출하고 차트에 적용 */
+function applyDualYAxis(n) {
+  /* n 이 주어지면 새 더미 데이터로 updateSeries 먼저 수행 */
+  if (n) {
+    const c = ApexCharts.getChartByID('mainChart');
+    if (!c) return;
+    // 타입 없이 일반 시리즈로 교체 후 재호출
+    chart.updateSeries(
+      c.w.globals.seriesNames.map((name, i) => ({ name, data: makeData(n) })),
+      false
+    );
+  }
+
+  /* seriesTypes 배열 → { 이름: 타입 } 맵으로 변환 */
+  const c = ApexCharts.getChartByID('mainChart');
+  if (!c) return;
+  const typeMap = Object.fromEntries(
+    c.w.globals.seriesNames.map((name, i) => [name, seriesTypes[i] || 'line'])
+  );
+
+  /* ▶ 공용 함수 호출 */
+  const result = buildDualYAxisOptions('mainChart', typeMap);
+  if (!result) return;
+
+  chart.updateOptions(result.payload, true, true);
+
+  /* 로그: seriesInfo 는 정적 변수 없이 함수 반환값 사용 */
+  addLog('ok', `이중 Y축 적용 — ${
+    result.seriesInfo.map(s => `${s.name}:${s.type}(${s.side})`).join(' · ')
+  }`);
+  updateAxisDiagram(result.seriesInfo);
+  updateCodePreview(result.payload.yaxis, result.seriesInfo);
+  setTimeout(() => refreshCards(ApexCharts.getChartByID('mainChart')), 150);
+}
+
+/** 단일 Y축으로 복원 */
+function resetToSingleYAxis() {
+  const n = +document.getElementById('ptSlider').value;
+  chart.updateOptions({
+    chart      : { type: chartType },
+    series     : initialSeries(n),
+    yaxis      : { labels: { style: { colors:'#6b7280', fontFamily:'Space Mono', fontSize:'10px' } } },
+    stroke     : { curve: 'smooth', width: 2 },
+    fill       : { type: 'solid' },
+    plotOptions: {},
+    dataLabels : {
+      enabled: true, formatter: v => v,
+      style: { fontSize:'9px', fontFamily:'Space Mono', colors:['#e8eaf0'] },
+      background: { enabled:true, foreColor:'#0a0c10', borderRadius:3, padding:2, opacity:.7, borderWidth:0 },
+      offsetY: -6
+    }
+  }, true, true);
+  chart.clearAnnotations(); annotationCount = 0;
+  addLog('ok', '단일 Y축으로 복원');
+  setTimeout(() => refreshCards(ApexCharts.getChartByID('mainChart')), 150);
+}
+
+/* ── 이중 Y축 ON/OFF 토글 ── */
+function toggleDualMode() {
+  dualMode = !dualMode;
+  const btn   = document.getElementById('dualToggleBtn');
+  const icon  = document.getElementById('dualToggleIcon');
+  const label = document.getElementById('dualToggleLabel');
+  if (dualMode) {
+    btn.classList.add('on');
+    icon.textContent  = '⊗';
+    label.textContent = '이중 Y축 모드 비활성화';
+    applyDualYAxis();
+  } else {
+    btn.classList.remove('on');
+    icon.textContent  = '⊕';
+    label.textContent = '이중 Y축 모드 활성화';
+    resetToSingleYAxis();
+  }
+  renderYAxisBuilder();
+}
+
+/* ── 시리즈 타입 변경 (pill 클릭) ── */
+function setSeriesType(idx, type) {
+  if (!dualMode) return;
+  seriesTypes[idx] = type;
+  renderYAxisBuilder();
+  applyDualYAxis();
+}
+
+/* ═══════════════════════════════════════════════
+   DUAL Y-AXIS UI RENDERERS
+   — 모두 chart.w.globals 또는 buildDualYAxisOptions
+     반환값(seriesInfo)에서 데이터를 조회하므로
+     SERIES_NAMES / COLORS 정적 변수에 의존하지 않음
+═══════════════════════════════════════════════ */
+
+/** 시리즈별 타입 토글 행 렌더링 */
+function renderYAxisBuilder() {
+  const c = ApexCharts.getChartByID('mainChart');
+  if (!c) return;
+  const g         = c.w.globals;
+  const names     = g.seriesNames;
+  const colors    = g.colors || [];
+  const container = document.getElementById('yaxisBuilder');
+  container.innerHTML = '';
+
+  names.forEach((name, i) => {
+    const t          = seriesTypes[i] || 'line';
+    const isBar      = t === 'bar';
+    const color      = colors[i] || '#fff';
+    const rowCls     = isBar ? 'bar-type' : 'line-type';
+    const badge      = isBar
+      ? `<span class="axis-badge badge-left">◀ LEFT</span>`
+      : `<span class="axis-badge badge-right">RIGHT ▶</span>`;
+    const disabledCls = dualMode ? '' : 'disabled-row';
+
+    container.innerHTML += `
+      <div class="yaxis-row ${rowCls} ${disabledCls}" id="yrow-${i}">
+        <div class="series-dot" style="background:${color};width:8px;height:8px;border-radius:50%;"></div>
+        <div class="yaxis-name">${name}</div>
+        ${badge}
+        <div class="type-pill-group">
+          <button class="type-pill ${isBar  ? 'bar-active' :''}" onclick="setSeriesType(${i},'bar')">BAR</button>
+          <button class="type-pill ${!isBar ? 'line-active':''}" onclick="setSeriesType(${i},'line')">LINE</button>
+        </div>
+      </div>`;
+  });
+}
+
+/** 좌/우 축 다이어그램 갱신 (seriesInfo = buildDualYAxisOptions 반환값) */
+function updateAxisDiagram(seriesInfo) {
+  // seriesInfo 가 없으면 현재 globals + seriesTypes 로 직접 조회
+  if (!seriesInfo) {
+    const c = ApexCharts.getChartByID('mainChart');
+    if (!c) return;
+    const g = c.w.globals;
+    seriesInfo = g.seriesNames.map((name, i) => ({
+      name, color: (g.colors||[])[i] || '#fff',
+      side: (seriesTypes[i]||'line') === 'bar' ? 'LEFT' : 'RIGHT'
+    }));
+  }
+  let leftHtml = '', rightHtml = '';
+  seriesInfo.forEach(s => {
+    const isLeft = s.side === 'LEFT';
+    const chip = `<span class="axis-chip ${isLeft ? 'chip-bar' : 'chip-line'}">
+      <span class="chip-dot" style="background:${s.color}"></span>${s.name}
+    </span>`;
+    if (isLeft) leftHtml  += chip;
+    else        rightHtml += chip;
+  });
+  document.getElementById('leftAxisChips').innerHTML  = leftHtml  || '<span style="color:#374151">—</span>';
+  document.getElementById('rightAxisChips').innerHTML = rightHtml || '<span style="color:#374151">—</span>';
+}
+
+/** yaxis 코드 미리보기 (yaxisArr = payload.yaxis, seriesInfo 병렬 배열) */
+function updateCodePreview(yaxisArr, seriesInfo) {
+  if (!yaxisArr || !seriesInfo) {
+    // 모드가 꺼져 있으면 빈 상태 표시
+    document.getElementById('codePreview').innerHTML =
+      '<span style="color:#374151">// 이중 Y축 모드를 활성화하면 생성된 옵션이 표시됩니다</span>';
+    return;
+  }
+  const lines = yaxisArr.map((ax, i) => {
+    const info = seriesInfo[i] || {};
+    const side = ax.opposite ? 'RIGHT ▶' : '◀ LEFT';
+    const showFlag = ax.show ? 'show:true ' : 'show:false';
+    return `<span class="cm">// [${i}] ${info.name || ''} — ${(info.type||'').toUpperCase()} → ${side} (${showFlag})</span>
+{ <span class="kw">seriesName</span>: <span class="str">"${ax.seriesName}"</span>, ` +
+      `<span class="kw">opposite</span>: <span class="val">${ax.opposite}</span>, ` +
+      `<span class="kw">show</span>: <span class="val">${ax.show}</span> }`;
+  });
+  document.getElementById('codePreview').innerHTML =
+    `<span class="kw">yaxis</span>: [\n  ${lines.join(',\n  ')}\n]`;
+}
+
+/* ═══════════════════════════════════════════════
+   LOG
+═══════════════════════════════════════════════ */
+function addLog(type,msg){
+  const box=document.getElementById('logBox');
+  const line=document.createElement('div');
+  line.className=`log-line ${type}`;
+  const t=new Date().toLocaleTimeString('ko-KR',{hour12:false});
+  line.innerHTML=`<span>[${t}]</span> ${msg}`;
+  box.appendChild(line);
+  box.scrollTop=box.scrollHeight;
+}
+</script>
+</body>
+</html>
