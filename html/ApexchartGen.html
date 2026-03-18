@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ApexCharts Design Pattern</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/apexcharts/3.54.0/apexcharts.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Sora:wght@300;400;600&display=swap');
+
+    :root {
+      --bg: #0b0f1a;
+      --surface: #111827;
+      --border: #1e2a3a;
+      --accent: #00e5ff;
+      --accent2: #7c3aed;
+      --accent3: #10b981;
+      --warn: #f59e0b;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --card-bg: #0f1923;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.1rem;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 0.8rem;
+      margin-top: 0.4rem;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+      padding: 1.25rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+
+    .controls label {
+      font-size: 0.75rem;
+      color: var(--muted);
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .controls select, .controls input {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.4rem 0.75rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .controls select:focus, .controls input:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      letter-spacing: 0.04em;
+    }
+
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: #33ecff; transform: translateY(-1px); }
+
+    .btn-secondary { background: transparent; color: var(--accent2); border: 1px solid var(--accent2); }
+    .btn-secondary:hover { background: var(--accent2); color: #fff; }
+
+    .btn-warn { background: transparent; color: var(--warn); border: 1px solid var(--warn); }
+    .btn-warn:hover { background: var(--warn); color: #000; }
+
+    .btn-success { background: transparent; color: var(--accent3); border: 1px solid var(--accent3); }
+    .btn-success:hover { background: var(--accent3); color: #000; }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(480px, 1fr));
+      gap: 1.5rem;
+    }
+
+    .chart-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .chart-card:hover { border-color: #2a3a50; }
+
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .chart-title {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .chart-meta {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.65rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      background: var(--border);
+      color: var(--muted);
+    }
+
+    .badge.active { background: rgba(0,229,255,0.12); color: var(--accent); }
+
+    .chart-body { padding: 0.5rem; }
+
+    .log-panel {
+      margin-top: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .log-header {
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #logOutput {
+      padding: 1rem 1.25rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--accent3);
+      max-height: 160px;
+      overflow-y: auto;
+      line-height: 1.7;
+    }
+
+    #logOutput .log-warn { color: var(--warn); }
+    #logOutput .log-info { color: var(--accent); }
+    #logOutput .log-error { color: #f87171; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>// ApexCharts — Registry Pattern</h1>
+  <p>// pre-defined options · data accumulation · separated chart factory</p>
+</header>
+
+<div class="controls">
+  <label>
+    CHART_ID
+    <select id="chartSelect">
+      <option value="lineChart">lineChart</option>
+      <option value="barChart">barChart</option>
+      <option value="areaChart">areaChart</option>
+    </select>
+  </label>
+  <label>
+    SERIES
+    <input id="seriesName" type="text" value="seriesA" style="width:100px" />
+  </label>
+  <label>
+    VALUES (comma)
+    <input id="dataInput" type="text" value="30,55,42,80,65" style="width:160px" />
+  </label>
+  <button class="btn btn-primary" onclick="handleAddData()">+ ADD DATA</button>
+  <button class="btn btn-secondary" onclick="handleRenderAll()">⬡ RENDER ALL</button>
+  <button class="btn btn-success" onclick="handleAddRandom()">↻ RANDOM APPEND</button>
+  <button class="btn btn-warn" onclick="handleClearChart()">✕ CLEAR CHART</button>
+</div>
+
+<div class="charts-grid" id="chartsGrid">
+  <div class="chart-card" id="card-lineChart">
+    <div class="chart-header">
+      <span class="chart-title">LINE CHART</span>
+      <div class="chart-meta">
+        <span class="badge" id="badge-lineChart">0 series</span>
+        <span class="badge active">line</span>
+      </div>
+    </div>
+    <div class="chart-body">
+      <div id="lineChart"></div>
+    </div>
+  </div>
+  <div class="chart-card" id="card-barChart">
+    <div class="chart-header">
+      <span class="chart-title">BAR CHART</span>
+      <div class="chart-meta">
+        <span class="badge" id="badge-barChart">0 series</span>
+        <span class="badge active">bar</span>
+      </div>
+    </div>
+    <div class="chart-body">
+      <div id="barChart"></div>
+    </div>
+  </div>
+  <div class="chart-card" id="card-areaChart">
+    <div class="chart-header">
+      <span class="chart-title">AREA CHART</span>
+      <div class="chart-meta">
+        <span class="badge" id="badge-areaChart">0 series</span>
+        <span class="badge active">area</span>
+      </div>
+    </div>
+    <div class="chart-body">
+      <div id="areaChart"></div>
+    </div>
+  </div>
+</div>
+
+<div class="log-panel">
+  <div class="log-header">
+    <span>// OPERATION LOG</span>
+    <span id="logCount">0 ops</span>
+  </div>
+  <div id="logOutput"></div>
+</div>
+
+<script>
+/* ============================================================
+   1. BASE OPTIONS — 공통 옵션 정의
+============================================================ */
+
+const baseOptions = {
+  chart: {
+    height: 260,
+    background: 'transparent',
+    toolbar: { show: false },
+    animations: { enabled: true, easing: 'easeinout', speed: 500 },
+    fontFamily: "'JetBrains Mono', monospace",
+  },
+  theme: { mode: 'dark' },
+  grid: {
+    borderColor: '#1e2a3a',
+    strokeDashArray: 3,
+    xaxis: { lines: { show: false } },
+  },
+  tooltip: {
+    theme: 'dark',
+    style: { fontFamily: "'JetBrains Mono', monospace", fontSize: '11px' },
+  },
+  legend: {
+    labels: { colors: '#64748b' },
+    fontFamily: "'JetBrains Mono', monospace",
+    fontSize: '11px',
+  },
+  xaxis: {
+    categories: [],
+    labels: { style: { colors: '#64748b', fontFamily: "'JetBrains Mono', monospace", fontSize: '10px' } },
+    axisBorder: { color: '#1e2a3a' },
+    axisTicks: { color: '#1e2a3a' },
+  },
+  yaxis: {
+    labels: { style: { colors: '#64748b', fontFamily: "'JetBrains Mono', monospace", fontSize: '10px' } },
+  },
+};
+
+
+/* ============================================================
+   2. CHART REGISTRY — 단일 통합 객체
+      options  : 미리 정의된 차트 옵션 (불변 원본)
+      series   : 누적 데이터 Map<name, number[]>
+      categories: 누적 카테고리 레이블 배열
+      instance : ApexCharts 인스턴스 (생성 전 null)
+============================================================ */
+
+const CHART_REGISTRY = {
+
+  lineChart: {
+    options: {
+      ...baseOptions,
+      chart: { ...baseOptions.chart, type: 'line', id: 'lineChart' },
+      stroke: { curve: 'smooth', width: 2 },
+      markers: { size: 4, hover: { size: 6 } },
+      colors: ['#00e5ff', '#7c3aed', '#10b981', '#f59e0b'],
+      series: [],
+    },
+    series:     new Map(),   // Map<seriesName, number[]>
+    categories: [],
+    instance:   null,
+  },
+
+  barChart: {
+    options: {
+      ...baseOptions,
+      chart: { ...baseOptions.chart, type: 'bar', id: 'barChart' },
+      plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+      dataLabels: { enabled: false },
+      colors: ['#7c3aed', '#00e5ff', '#10b981', '#f59e0b'],
+      series: [],
+    },
+    series:     new Map(),
+    categories: [],
+    instance:   null,
+  },
+
+  areaChart: {
+    options: {
+      ...baseOptions,
+      chart: { ...baseOptions.chart, type: 'area', id: 'areaChart' },
+      stroke: { curve: 'smooth', width: 2 },
+      fill: {
+        type: 'gradient',
+        gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.02, stops: [0, 90, 100] },
+      },
+      colors: ['#10b981', '#00e5ff', '#7c3aed', '#f59e0b'],
+      series: [],
+    },
+    series:     new Map(),
+    categories: [],
+    instance:   null,
+  },
+
+};
+
+
+/* ============================================================
+   3. DATA LAYER — CHART_REGISTRY 내 데이터 누적/변환
+============================================================ */
+
+/**
+ * 데이터 누적 (여러 번 호출해도 안전하게 push)
+ * @param {string}   chartId
+ * @param {string}   seriesName
+ * @param {number[]} data
+ * @param {string[]} [categories]
+ */
+function appendData(chartId, seriesName, data, categories = []) {
+  const entry = CHART_REGISTRY[chartId];
+  if (!entry) return log(`appendData → [${chartId}] 등록되지 않은 차트`, 'error');
+
+  // 시리즈 누적
+  if (!entry.series.has(seriesName)) entry.series.set(seriesName, []);
+  entry.series.get(seriesName).push(...data);
+
+  // 카테고리 누적 (미제공 시 자동 인덱스)
+  if (categories.length > 0) {
+    entry.categories.push(...categories);
+  } else {
+    const start = entry.categories.length + 1;
+    for (let i = 0; i < data.length; i++) entry.categories.push(`P${start + i}`);
+  }
+
+  log(`appendData → [${chartId}] "${seriesName}" +${data.length} pts (누적: ${entry.series.get(seriesName).length})`, 'info');
+  updateBadge(chartId);
+}
+
+/**
+ * CHART_REGISTRY.series → ApexCharts series 포맷 변환
+ */
+function buildSeries(chartId) {
+  const result = [];
+  CHART_REGISTRY[chartId].series.forEach((data, name) => {
+    result.push({ name, data: [...data] });
+  });
+  return result;
+}
+
+/**
+ * 데이터 초기화 (instance는 유지)
+ */
+function clearData(chartId) {
+  const entry = CHART_REGISTRY[chartId];
+  entry.series     = new Map();
+  entry.categories = [];
+  log(`clearData → [${chartId}] 데이터 초기화`, 'warn');
+  updateBadge(chartId);
+}
+
+
+/* ============================================================
+   4. CHART FACTORY — 생성/갱신 분리
+============================================================ */
+
+/**
+ * 차트 생성 — instance가 없을 때만 신규 렌더
+ * options 원본 딥클론 후 누적 데이터 주입
+ */
+function createChart(chartId) {
+  const entry = CHART_REGISTRY[chartId];
+  if (!entry) return log(`createChart → [${chartId}] 등록되지 않은 차트`, 'error');
+
+  if (entry.instance) {
+    log(`createChart → [${chartId}] 이미 존재, updateChart 위임`, 'warn');
+    return updateChart(chartId);
+  }
+
+  const el = document.getElementById(chartId);
+  if (!el) return log(`createChart → [${chartId}] DOM element 없음`, 'error');
+
+  // 원본 options 딥클론 후 데이터 주입
+  const opts = JSON.parse(JSON.stringify(entry.options));
+  opts.series            = buildSeries(chartId);
+  opts.xaxis.categories  = [...entry.categories];
+
+  entry.instance = new ApexCharts(el, opts);
+  entry.instance.render();
+
+  log(`createChart → [${chartId}] 생성 완료 (${opts.series.length} series)`, 'info');
+}
+
+/**
+ * 차트 갱신 — instance가 있을 때 누적 데이터 반영
+ */
+function updateChart(chartId) {
+  const entry = CHART_REGISTRY[chartId];
+  if (!entry?.instance) {
+    log(`updateChart → [${chartId}] instance 없음, createChart 위임`, 'warn');
+    return createChart(chartId);
+  }
+
+  entry.instance.updateOptions({
+    series:  buildSeries(chartId),
+    xaxis:   { categories: [...entry.categories] },
+  });
+
+  log(`updateChart → [${chartId}] 갱신 완료 (${entry.series.size} series, ${entry.categories.length} pts)`, 'info');
+}
+
+/**
+ * 전체 차트 렌더/갱신
+ */
+function renderAllCharts() {
+  Object.keys(CHART_REGISTRY).forEach(id => {
+    CHART_REGISTRY[id].instance ? updateChart(id) : createChart(id);
+  });
+  log('renderAllCharts → 전체 렌더링 완료', 'info');
+}
+
+/**
+ * 차트 파괴 + 데이터 초기화
+ */
+function destroyChart(chartId) {
+  const entry = CHART_REGISTRY[chartId];
+  if (entry?.instance) {
+    entry.instance.destroy();
+    entry.instance = null;
+  }
+  clearData(chartId);
+  log(`destroyChart → [${chartId}] 제거 완료`, 'warn');
+}
+
+
+/* ============================================================
+   5. UI HANDLERS
+============================================================ */
+
+function handleAddData() {
+  const chartId    = document.getElementById('chartSelect').value;
+  const seriesName = document.getElementById('seriesName').value.trim() || 'series1';
+  const rawData    = document.getElementById('dataInput').value;
+  const data       = rawData.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+
+  if (!data.length) return log('입력 데이터 없음', 'error');
+
+  appendData(chartId, seriesName, data);
+  updateChart(chartId);
+}
+
+function handleRenderAll() {
+  renderAllCharts();
+}
+
+function handleAddRandom() {
+  const chartId = document.getElementById('chartSelect').value;
+  ['alpha', 'beta'].forEach(s => {
+    const data = Array.from({ length: 5 }, () => Math.floor(Math.random() * 90 + 10));
+    appendData(chartId, s, data);
+  });
+  updateChart(chartId);
+}
+
+function handleClearChart() {
+  destroyChart(document.getElementById('chartSelect').value);
+}
+
+function updateBadge(chartId) {
+  const el = document.getElementById(`badge-${chartId}`);
+  if (el) el.textContent = `${CHART_REGISTRY[chartId].series.size} series`;
+}
+
+
+/* ============================================================
+   5. LOGGER
+============================================================ */
+let logCount = 0;
+function log(msg, type = 'default') {
+  logCount++;
+  const out = document.getElementById('logOutput');
+  const ts = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+  const line = document.createElement('div');
+  line.className = type === 'warn' ? 'log-warn' : type === 'info' ? 'log-info' : type === 'error' ? 'log-error' : '';
+  line.textContent = `[${ts}] ${msg}`;
+  out.appendChild(line);
+  out.scrollTop = out.scrollHeight;
+  document.getElementById('logCount').textContent = `${logCount} ops`;
+}
+
+
+/* ============================================================
+   INIT — 페이지 로드시 모든 차트 생성
+============================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+  // 초기 샘플 데이터 주입 (appendData 누적 테스트)
+  appendData('lineChart', 'Revenue',  [42, 58, 55, 71, 66, 85], ['Jan','Feb','Mar','Apr','May','Jun']);
+  appendData('lineChart', 'Revenue',  [90, 78], ['Jul', 'Aug']); // 누적 호출 테스트
+  appendData('lineChart', 'Cost',     [30, 40, 35, 50, 45, 55, 60, 52], ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug']);
+
+  appendData('barChart', 'Q1', [55, 70, 45, 80]);
+  appendData('barChart', 'Q1', [60, 75]);          // 누적 호출 테스트
+  appendData('barChart', 'Q2', [40, 65, 50, 90, 55, 70]);
+
+  appendData('areaChart', 'Users',   [120, 145, 135, 180, 165, 210]);
+  appendData('areaChart', 'Users',   [195, 230]);  // 누적 호출 테스트
+  appendData('areaChart', 'Sessions',[200, 230, 210, 275, 250, 300, 280, 320]);
+
+  renderAllCharts();
+});
+</script>
+</body>
+</html>
